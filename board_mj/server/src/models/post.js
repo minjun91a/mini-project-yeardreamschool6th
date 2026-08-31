@@ -9,8 +9,5 @@ const schema = new mongoose.Schema({
 }, {collection: 'posts', timestamps: true, id: false});
 
 schema.index({createdAt: -1});
-schema.pre('save', async function() {
-    console.log('[DEBUG] Post 저장 직전:', {title: this.title, author: this.author});
-});
 
 module.exports = mongoose.model('Post', schema);

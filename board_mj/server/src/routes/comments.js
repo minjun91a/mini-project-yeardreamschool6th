@@ -8,12 +8,10 @@ router.patch('/:id', auth, async (req, res) => {
     const comment = await Comment.findById(req.params.id);
 
     if (!comment) {
-        console.log('[DEBUG] 404 분기 진입');
         return res.status(404).json({
             success: false,
             error: {code: 'NOT_FOUND', message: '없는 댓글입니다.'}});
     }
-    console.log('[DEBUG] 정상 분기 진입');
 
     if (String(comment.author) !== req.user.sub && req.user.grade !== 'admin') {
         return res.status(403).json({
@@ -36,12 +34,10 @@ router.delete('/:id', auth, async (req, res) => {
     const comment = await Comment.findById(req.params.id);
 
     if (!comment) {
-        console.log('[DEBUG] 404 분기 진입');
         return res.status(404).json({
             success: false,
             error: {code: 'NOT_FOUND', message: '없는 댓글입니다.'}});
     }
-    console.log('[DEBUG] 정상 분기 진입');
 
     if (String(comment.author) !== req.user.sub && req.user.grade !== 'admin') {
         return res.status(403).json({

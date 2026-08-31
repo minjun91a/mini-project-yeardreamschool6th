@@ -34,16 +34,11 @@ const schema = new mongoose.Schema({
 }, {collection: 'users', timestamps: true, id: false});
 
 schema.pre('save', async function() {
-    console.log('[DEBUG] pw 변경 여부:', this.isModified('pw'));
-
     if (!this.isModified('pw')) return;
     this.pw = await bcrypt.hash(this.pw, 10);
-
-    console.log('[DEBUG] 해싱 결과 prefix:', this.pw.substring(0, 7));
 });
 
 schema.methods.checkPw = function(plain) {
-    console.log('[DEBUG] checkPw:', {hasPlain: !!plain, hasHash: !!this.pw});
     return bcrypt.compare(plain, this.pw);
 };
 

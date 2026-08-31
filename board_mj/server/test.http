@@ -58,7 +58,7 @@ GET {{host}}/api/auth/me
 Authorization: Bearer {{token}}
 
 ### 글 수정 (제목만)
-PATCH {{host}}/api/posts/6a951d491e81c7634d75c62f
+PATCH {{host}}/api/posts/6a952aaf7d2ffd0e071bb258
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -71,7 +71,7 @@ Content-Type: application/json
 { "title": "안 될 것" }
 
 ### 글 삭제
-DELETE {{host}}/api/posts/6a951d491e81c7634d75c62f
+DELETE {{host}}/api/posts/6a952aaf7d2ffd0e071bb258
 Authorization: Bearer {{token}}
 
 ### 댓글 작성

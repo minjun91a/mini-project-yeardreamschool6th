@@ -4,8 +4,6 @@ module.exports = (req, res, next) => {
     const header = req.headers.authorization || '';
     const [schema, token] = header.split(' ');
 
-    console.log('[DEBUG] auth header:', {schema, hasToken: !!token});
-
     if (schema !== 'Bearer' || !token) {
         return res.status(401).json({
             success: false,
@@ -15,11 +13,9 @@ module.exports = (req, res, next) => {
 
     try {
         req.user = jwt.verify(token, process.env.JWT_SECRET);
-        console.log('[DEBUG] token payload:', req.user);
 
         return next();
     } catch (e) {
-        console.log('[DEBUG] 토큰 검증 실패:', e.name, e.message);
 
         const expired = e.name === 'tokenExpiredError';
         return res.status(401).json({

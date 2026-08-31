@@ -5,8 +5,6 @@ const User = require('../models/user');
 const auth = require('../middlewares/auth');
 
 router.post('/signup', async function (req, res) {
-    console.log('[DEBUG] body:', req.body);
-
     const {id, pw, name} = req.body;
 
     const result = await User.create({id, pw, name});

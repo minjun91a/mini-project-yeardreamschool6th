@@ -5,7 +5,6 @@ const auth = require('../middlewares/auth');
 const Comment = require('../models/comment');
 
 router.get('/', async (req, res) => {
-    console.log('[DEBUG] query:', req.query);
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, parseInt(req.query.limit) || 10);
@@ -14,10 +13,10 @@ router.get('/', async (req, res) => {
         .skip((page - 1) * limit)
         .limit(limit)
         .select('-content')
+        .populate('author', 'id name')
         .lean();
     const total = await Post.countDocuments();
 
-    console.log('[DEBUG] 조회 결과:', {count: items.length, total, page, limit});
     return res.json({
         success: true,
         data: {items, page, limit, total}
@@ -25,17 +24,18 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-    console.log('[DEBUG] params:', req.params);
 
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-        console.log('[DEBUG] 404 분기 진입');
         return res.status(404).json({
             success: false,
             error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
     }
-    console.log('[DEBUG] 정상 분기 진입');
+
+    post.viewCount += 1;
+    await post.save();
+    await post.populate('author', 'id name');
 
     return res.json({
         success: true,
@@ -44,7 +44,6 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', auth, async (req, res) => {
-    console.log('[DEBUG] body:', req.body);
     const post = await Post.create({
         title: req.body.title,
         content: req.body.content,
@@ -61,12 +60,10 @@ router.patch('/:id', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-        console.log('[DEBUG] 404 분기 진입');
         return res.status(404).json({
             success: false,
             error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
     }
-    console.log('[DEBUG] 정상 분기 진입');
 
     if (String(post.author) !== req.user.sub && req.user.grade !== 'admin') {
         return res.status(403).json({
@@ -90,12 +87,10 @@ router.delete('/:id', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-        console.log('[DEBUG] 404 분기 진입');
         return res.status(404).json({
             success: false,
             error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
     }
-    console.log('[DEBUG] 정상 분기 진입');
 
     if (String(post.author) !== req.user.sub && req.user.grade !== 'admin') {
         return res.status(403).json({
@@ -113,15 +108,12 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 router.get('/:id/comments', async (req, res) => {
-    console.log('[DEBUG] query:', req.query);
     const post = await Post.findById(req.params.id);
     if (!post) {
-        console.log('[DEBUG] 404 분기 진입');
         return res.status(404).json({
             success: false,
             error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
     }
-    console.log('[DEBUG] 정상 분기 진입');
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, parseInt(req.query.limit) || 10);
@@ -129,10 +121,9 @@ router.get('/:id/comments', async (req, res) => {
         .sort({createdAt: 1})
         .skip((page - 1) * limit)
         .limit(limit)
+        .populate('author', 'id name')
         .lean();
     const total = await Comment.countDocuments({post: req.params.id});
-
-    console.log('[DEBUG] 조회 결과:', {count: items.length, total, page, limit});
 
     return res.json({
         success: true,
@@ -143,12 +134,10 @@ router.get('/:id/comments', async (req, res) => {
 router.post('/:id/comments', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) {
-        console.log('[DEBUG] 404 분기 진입');
         return res.status(404).json({
             success: false,
             error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
     }
-    console.log('[DEBUG] 정상 분기 정상');
 
     const comment = await Comment.create({
         post: req.params.id,
@@ -157,8 +146,6 @@ router.post('/:id/comments', auth, async (req, res) => {
     });
 
     const r = await Post.updateOne({_id: req.params.id}, {$inc: {commentCount: 1}});
-
-    console.log('[DEBUG] commentCount 갱신:', r.matchedCount, r.modifiedCount);
 
     return res.status(201).json({
         success: true,
