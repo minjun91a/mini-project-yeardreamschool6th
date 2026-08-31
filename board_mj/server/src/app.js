@@ -23,6 +23,7 @@ app.get('/boom', (req, res) => {
     throw new Error('의도적인 에러');
 });
 
+app.use('/api/posts', require('./routes/posts'));
 app.use('/*path', (req, res) => {
     console.log('[DEBUG] 매칭된 라우터 없음:', req.originalUrl);
     return res.status(404).json({

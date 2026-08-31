@@ -1,5 +1,17 @@
-GET {{host}}/health
+### 목록 조회
+GET {{host}}/api/posts
 
-GET {{host}}/없는경로
+### 목록 조회 - 페이지네이션
+GET {{host}}/api/posts?page=2&limit=5
 
-GET {{host}}/boom
+### 없는 글 조회 (404)
+GET {{host}}/api/posts/000000000000000000000000
+
+### 잘못된 형식 id (400)
+GET {{host}}/api/posts/abc
+
+### 글 작성
+POST {{host}}/api/posts
+Content-Type: application/json
+
+{ "title": "첫 글", "content": "내용입니다" }
