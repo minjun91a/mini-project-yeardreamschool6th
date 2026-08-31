@@ -13,5 +13,84 @@ GET {{host}}/api/posts/abc
 ### 글 작성
 POST {{host}}/api/posts
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 { "title": "첫 글", "content": "내용입니다" }
+
+### 회원가입 테스트
+POST {{host}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "id": "test",
+  "pw": "test@1234",
+  "name": "테스트계정"
+}
+
+### 회원가입 테스트 2
+POST {{host}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "id": "test2",
+  "pw": "test2@1234",
+  "name": "테스트계정2"
+}
+
+### 로그인 실패 (401)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "id": "test", "pw": "wrongpass" }
+
+### 로그인 — 토큰 저장
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "id": "test", "pw": "test@1234" }
+
+> {%
+    client.global.set("token", response.body.data.token);
+%}
+
+### 내 정보
+GET {{host}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### 글 수정 (제목만)
+PATCH {{host}}/api/posts/6a951d491e81c7634d75c62f
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "title": "수정된 제목" }
+
+### 글 수정 - 없는 id (404)
+PATCH {{host}}/api/posts/000000000000000000000000
+Content-Type: application/json
+
+{ "title": "안 될 것" }
+
+### 글 삭제
+DELETE {{host}}/api/posts/6a951d491e81c7634d75c62f
+Authorization: Bearer {{token}}
+
+### 댓글 작성
+POST {{host}}/api/posts/6a9526edbd6796f973bd5574/comments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "content": "첫 댓글" }
+
+### 댓글 목록
+GET {{host}}/api/posts/6a9526edbd6796f973bd5574/comments
+
+### 댓글 수정
+PATCH {{host}}/api/comments/댓글_id
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "content": "수정된 댓글" }
+
+### 댓글 삭제
+DELETE {{host}}/api/comments/6a952715bd6796f973bd557f
+Authorization: Bearer {{token}}

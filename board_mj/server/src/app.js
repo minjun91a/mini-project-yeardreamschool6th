@@ -24,6 +24,8 @@ app.get('/boom', (req, res) => {
 });
 
 app.use('/api/posts', require('./routes/posts'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/comments', require('./routes/comments'));
 app.use('/*path', (req, res) => {
     console.log('[DEBUG] 매칭된 라우터 없음:', req.originalUrl);
     return res.status(404).json({

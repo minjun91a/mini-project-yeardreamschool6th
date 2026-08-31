@@ -17,7 +17,7 @@ module.exports = (err, req, res, next) => {
             error: {code: 'INVALID_ID', message: '잘못된 형식의 ID입니다.'}
         });
     }
-    if (err.name === 11000) {
+    if (err.code === 11000) {
         return res.status(409).json({
             success: false,
             error: {code: 'DUPLICATE', message: '이미 사용 중인 값입니다.'}
@@ -27,6 +27,7 @@ module.exports = (err, req, res, next) => {
     console.error('[미분류 에러]', err.name);
 
     return res.status(err.status || 500).json({
+        success: false,
         error: {code: 'SERVER_ERROR', message: '서버 오류가 발생했습니다.'}
     });
 };
