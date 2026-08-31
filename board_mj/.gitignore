@@ -1,0 +1,7 @@
+node_modules
+.env
+.env.local
+.next/
+*.log
+.idea/
+http-client.private.env.json

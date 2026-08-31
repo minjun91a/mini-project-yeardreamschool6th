@@ -1,0 +1,5 @@
+GET {{host}}/health
+
+GET {{host}}/없는경로
+
+GET {{host}}/boom
