@@ -84,3 +84,41 @@ Authorization: Bearer {{token}}
 ### 댓글 삭제
 DELETE {{host}}/api/comments/6a952fe9abdbc5705e93f2bf
 Authorization: Bearer {{token}}
+
+### 장소 생성 - 정상 테스트
+POST {{host}}/api/places
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "테스트 카페",
+  "category": "cafe",
+  "address": "서울특별시 중구 세종대로 110",
+  "longitude": 126.978,
+  "latitude": 37.5665
+}
+
+### 문자열 좌표
+POST {{host}}/api/places
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "테스트 카페",
+  "category": "cafe",
+  "address": "서울특별시 중구 세종대로 110",
+  "longitude": "abc"
+
+}
+### 범위 초과
+POST {{host}}/api/places
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "테스트 카페",
+  "category": "cafe",
+  "address": "서울특별시 중구 세종대로 110",
+  "longitude": 126.978,
+  "latitude": 100
+}
