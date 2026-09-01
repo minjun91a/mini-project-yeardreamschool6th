@@ -143,3 +143,106 @@ GET {{host}}/api/places/abc
 
 ### 장소 상세 조회 - 존재하지 않는 장소
 GET {{host}}/api/places/000000000000000000000000
+
+### =========================================
+### NOW 게시글 생성 테스트
+### =========================================
+
+
+### 1. NOW 생성 - 정상
+POST {{host}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "kind": "now",
+  "placeId": "6a9672a70aa54f9ad4153f75",
+  "status": "quiet",
+  "content": "2층 창가 자리 많이 남아있어요."
+}
+
+
+### 2. NOW 생성 - placeId 없음
+POST {{host}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "kind": "now",
+  "status": "quiet",
+  "content": "자리 많아요."
+}
+
+
+### 3. NOW 생성 - 잘못된 placeId 형식
+POST {{host}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "kind": "now",
+  "placeId": "abc",
+  "status": "quiet",
+  "content": "자리 많아요."
+}
+
+
+### 4. NOW 생성 - 존재하지 않는 장소
+POST {{host}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "kind": "now",
+  "placeId": "000000000000000000000000",
+  "status": "quiet",
+  "content": "자리 많아요."
+}
+
+
+### 5. NOW 생성 - 잘못된 status
+POST {{host}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "kind": "now",
+  "placeId": "6a9672a70aa54f9ad4153f75",
+  "status": "hello",
+  "content": "자리 많아요."
+}
+
+
+### 6. NOW 생성 - content 없음
+POST {{host}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "kind": "now",
+  "placeId": "6a9672a70aa54f9ad4153f75",
+  "status": "quiet"
+}
+
+
+### 7. 기존 board 작성 회귀 테스트
+POST {{host}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "기존 게시판 테스트",
+  "content": "기존 게시판 작성 기능도 정상이어야 합니다."
+}
+
+### 8. NOW 생성 - content가 공백만 있음
+POST {{host}}/api/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "kind": "now",
+  "placeId": "6a9672a70aa54f9ad4153f75",
+  "status": "quiet",
+  "content": "       "
+}

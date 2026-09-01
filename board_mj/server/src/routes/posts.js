@@ -3,6 +3,8 @@ const router = express.Router();
 const Post = require('../models/post');
 const auth = require('../middlewares/auth');
 const Comment = require('../models/comment');
+const mongoose = require('mongoose');
+const Place = require('../models/place');
 
 router.get('/', async (req, res) => {
 
@@ -45,9 +47,131 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', auth, async (req, res) => {
+    const kind = req.body.kind || 'board';
+
+    const {
+        title,
+        content,
+        placeId,
+        status
+    } = req.body;
+
+    const allowedKinds = ['board', 'now'];
+
+    if (!allowedKinds.includes(kind)) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_KIND',
+                message: '게시글 종류가 올바르지 않습니다.'
+            }
+        });
+    }
+
+    if (kind === 'now') {
+        if (!placeId) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'PLACE_ID_REQUIRED',
+                    message: '장소를 선택해주세요.'
+                }
+            });
+        }
+
+        if (!mongoose.isValidObjectId(placeId)) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'INVALID_PLACE_ID',
+                    message: '올바르지 않은 장소 ID입니다.'
+                }
+            });
+        }
+
+        const place = await Place.findById(placeId);
+
+        if (!place) {
+            return res.status(404).json({
+                success: false,
+                error: {
+                    code: 'PLACE_NOT_FOUND',
+                    message: '장소를 찾을 수 없습니다.'
+                }
+            });
+        }
+
+        const allowedStatuses = ['quiet', 'normal', 'busy'];
+
+        if (!status) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'STATUS_REQUIRED',
+                    message: '현재 상태를 선택해주세요.'
+                }
+            });
+        }
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'INVALID_STATUS',
+                    message: '현재 상태 값이 올바르지 않습니다.'
+                }
+            });
+        }
+
+        if (typeof content !== 'string' || !content.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'CONTENT_REQUIRED',
+                    message: '내용을 입력해주세요.'
+                }
+            });
+        }
+
+        const post = await Post.create({
+            kind: 'now',
+            content,
+            author: req.user.sub,
+            place: placeId,
+            status,
+            visitVerified: false
+        });
+
+        return res.status(201).json({
+            success: true,
+            data: {post}
+        });
+    }
+
+    if (typeof title !== 'string' || !title.trim()) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'TITLE_REQUIRED',
+                message: '제목을 입력해주세요.'
+            }
+        });
+    }
+
+    if (typeof content !== 'string' || !content.trim()) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'CONTENT_REQUIRED',
+                message: '내용을 입력해주세요.'
+            }
+        });
+    }
+
     const post = await Post.create({
-        title: req.body.title,
-        content: req.body.content,
+        kind: 'board',
+        title,
+        content,
         author: req.user.sub
     });
 
