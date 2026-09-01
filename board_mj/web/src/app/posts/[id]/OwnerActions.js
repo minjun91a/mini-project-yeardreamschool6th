@@ -1,18 +1,22 @@
 'use client'
 
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 import {apiFetch} from "@/lib/api";
 import Link from "next/link";
 
 export default function OwnerActions({postId, authorId}){
     const [loading, setLoading] = useState(false);
+    const [isOwner, setIsOwner] = useState(false);
     const router = useRouter();
 
-    const raw = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-    const me = raw ? JSON.parse(raw) : null;
+    useEffect(() => {
+        const raw = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+        const me = raw ? JSON.parse(raw) : null;
+        setIsOwner(!!me || me._id !== authorId);
+    }, [authorId]);
 
-    if (!me || me._id !== authorId) return null;
+    if (!isOwner) return null;
 
     async function handleDelete(){
         if (!confirm('정말 삭제할까요?')) return;
