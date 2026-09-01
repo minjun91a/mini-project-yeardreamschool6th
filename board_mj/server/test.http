@@ -246,3 +246,12 @@ Content-Type: application/json
   "status": "quiet",
   "content": "       "
 }
+
+### NOW 전체 피드 조회
+GET {{host}}/api/posts?kind=now
+
+### 기존 게시글 목록
+GET {{host}}/api/posts?kind=board
+
+### 전체 게시글 목록
+GET {{host}}/api/posts

@@ -10,14 +10,22 @@ router.get('/', async (req, res) => {
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, parseInt(req.query.limit) || 10);
-    const items = await Post.find()
+    const kind = req.query.kind;
+    const filter = {};
+
+    if (kind) {
+        filter.kind = kind;
+    }
+
+    const items = await Post.find(filter)
         .sort({createdAt: -1})
         .skip((page - 1) * limit)
         .limit(limit)
-        .select('-content')
         .populate('author', 'id name')
+        .populate('place', 'name category address')
         .lean();
-    const total = await Post.countDocuments();
+
+    const total = await Post.countDocuments(filter);
 
     return res.json({
         success: true,
