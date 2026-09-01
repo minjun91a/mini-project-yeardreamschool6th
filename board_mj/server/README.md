@@ -40,7 +40,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 src/
 ├─ server.js          진입점 (DB 연결 후 listen)
-├─ app.js             미들웨어 및 라우터 등록
+├─ api.js             미들웨어 및 라우터 등록
 ├─ db.js              mongoose 연결
 ├─ models/            User, Post, Comment
 ├─ routes/            auth, posts, comments
@@ -49,7 +49,7 @@ src/
    └─ error.js        전역 에러 핸들러
 ```
 
-`app.js`와 `server.js`를 분리한 이유는 통합 테스트(supertest)에서 실제 포트를 열지 않고 `app` 객체만 사용하기 위함.
+`api.js`와 `server.js`를 분리한 이유는 통합 테스트(supertest)에서 실제 포트를 열지 않고 `app` 객체만 사용하기 위함.
 
 ## 응답 규격
 

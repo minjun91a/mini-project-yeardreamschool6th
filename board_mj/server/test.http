@@ -15,7 +15,7 @@ POST {{host}}/api/posts
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-{ "title": "첫 글", "content": "내용입니다" }
+{ "title": "세번째 글", "content": "내용입니다" }
 
 ### 회원가입 테스트
 POST {{host}}/api/auth/signup
@@ -25,16 +25,6 @@ Content-Type: application/json
   "id": "test",
   "pw": "test@1234",
   "name": "테스트계정"
-}
-
-### 회원가입 테스트 2
-POST {{host}}/api/auth/signup
-Content-Type: application/json
-
-{
-  "id": "test2",
-  "pw": "test2@1234",
-  "name": "테스트계정2"
 }
 
 ### 로그인 실패 (401)
@@ -58,7 +48,7 @@ GET {{host}}/api/auth/me
 Authorization: Bearer {{token}}
 
 ### 글 수정 (제목만)
-PATCH {{host}}/api/posts/6a952aaf7d2ffd0e071bb258
+PATCH {{host}}/api/posts/6a952fababdbc5705e93f2b6
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -71,26 +61,26 @@ Content-Type: application/json
 { "title": "안 될 것" }
 
 ### 글 삭제
-DELETE {{host}}/api/posts/6a952aaf7d2ffd0e071bb258
+DELETE {{host}}/api/posts/6a9613c950f276ee6592f9ab
 Authorization: Bearer {{token}}
 
 ### 댓글 작성
-POST {{host}}/api/posts/6a9526edbd6796f973bd5574/comments
+POST {{host}}/api/posts/6a952fd8abdbc5705e93f2bc/comments
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 { "content": "첫 댓글" }
 
 ### 댓글 목록
-GET {{host}}/api/posts/6a9526edbd6796f973bd5574/comments
+GET {{host}}/api/posts/6a952fe9abdbc5705e93f2bf/comments
 
 ### 댓글 수정
-PATCH {{host}}/api/comments/댓글_id
+PATCH {{host}}/api/comments/6a952fe9abdbc5705e93f2bf
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 { "content": "수정된 댓글" }
 
 ### 댓글 삭제
-DELETE {{host}}/api/comments/6a952715bd6796f973bd557f
+DELETE {{host}}/api/comments/6a952fe9abdbc5705e93f2bf
 Authorization: Bearer {{token}}
