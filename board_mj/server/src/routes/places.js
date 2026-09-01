@@ -12,19 +12,6 @@ router.post('/', auth, async (req, res) => {
         latitude
     } = req.body;
 
-    const place = await Place.create({
-        name,
-        category,
-        address,
-        location: {
-            type: 'Point',
-            coordinates: [
-                longitude,
-                latitude
-            ]
-        }
-    });
-
     if (
         typeof longitude !== 'number' ||
         typeof latitude !== 'number'
@@ -52,6 +39,19 @@ router.post('/', auth, async (req, res) => {
             }
         });
     }
+
+    const place = await Place.create({
+        name,
+        category,
+        address,
+        location: {
+            type: 'Point',
+            coordinates: [
+                longitude,
+                latitude
+            ]
+        }
+    });
 
     return res.status(201).json({
         success: true,
