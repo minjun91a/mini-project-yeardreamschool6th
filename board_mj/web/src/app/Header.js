@@ -24,17 +24,19 @@ export default function Header() {
     }
 
     return (
-        <header style={{padding: 16, borderBottom: '1px solid #333', display: 'flex', gap: 12}}>
-            <Link href="/">게시판</Link>
-
-            <span style={{marginLeft: 'auto'}}>
+        <header>
+            <Link href="/" className="logo">board</Link>
+            <span style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10}}>
                 {me ? (
                     <>
-                        {me.name}님{' '}
-                        <button onClick={handleLogout}>로그아웃</button>
+                        <Link href="/posts/new" className="muted">글쓰기</Link>
+                        <span className="muted">{me.name}</span>
+                        <button className="ghost" onClick={handleLogout}>로그아웃</button>
                     </>
                 ) : (
-                    <Link href="/login">로그인</Link>
+                    <Link href="/login">
+                        <button>로그인</button>
+                    </Link>
                 )}
             </span>
         </header>

@@ -33,9 +33,11 @@ export default function OwnerActions({postId, authorId}){
     }
 
     return (
-        <div>
-            <Link href={`/posts/${postId}/edit`}>수정</Link>
-            <button onClick={handleDelete} disabled={loading}>
+        <div style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
+            <Link href={`/posts/${postId}/edit`}>
+                <button className="ghost">수정</button>
+            </Link>
+            <button className="ghost" onClick={handleDelete} disabled={loading}>
                 {loading ? '삭제 중...' : '삭제'}
             </button>
         </div>

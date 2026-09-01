@@ -15,16 +15,16 @@ POST {{host}}/api/posts
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-{ "title": "세번째 글", "content": "내용입니다" }
+{ "title": "1 글", "content": "내용입니다" }
 
 ### 회원가입 테스트
 POST {{host}}/api/auth/signup
 Content-Type: application/json
 
 {
-  "id": "test",
-  "pw": "test@1234",
-  "name": "테스트계정"
+  "id": "user",
+  "pw": "user@1234",
+  "name": "일반계정"
 }
 
 ### 로그인 실패 (401)
