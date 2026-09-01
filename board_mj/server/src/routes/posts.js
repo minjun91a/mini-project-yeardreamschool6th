@@ -30,7 +30,8 @@ router.get('/:id', async (req, res) => {
     if (!post) {
         return res.status(404).json({
             success: false,
-            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
+            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}
+        });
     }
 
     post.viewCount += 1;
@@ -62,7 +63,8 @@ router.patch('/:id', auth, async (req, res) => {
     if (!post) {
         return res.status(404).json({
             success: false,
-            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
+            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}
+        });
     }
 
     if (String(post.author) !== req.user.sub && req.user.grade !== 'admin') {
@@ -89,7 +91,8 @@ router.delete('/:id', auth, async (req, res) => {
     if (!post) {
         return res.status(404).json({
             success: false,
-            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
+            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}
+        });
     }
 
     if (String(post.author) !== req.user.sub && req.user.grade !== 'admin') {
@@ -112,7 +115,8 @@ router.get('/:id/comments', async (req, res) => {
     if (!post) {
         return res.status(404).json({
             success: false,
-            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
+            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}
+        });
     }
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -136,7 +140,8 @@ router.post('/:id/comments', auth, async (req, res) => {
     if (!post) {
         return res.status(404).json({
             success: false,
-            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}});
+            error: {code: 'NOT_FOUND', message: '없는 게시글입니다.'}
+        });
     }
 
     const comment = await Comment.create({
