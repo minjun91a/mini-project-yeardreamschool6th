@@ -122,3 +122,15 @@ Content-Type: application/json
   "longitude": 126.978,
   "latitude": 100
 }
+
+### 장소 목록 조회
+GET {{host}}/api/places
+
+### 장소 검색
+GET {{host}}/api/places?q=테스트
+
+### 장소 카테고리 검색
+GET {{host}}/api/places?category=cafe
+
+### 장소 페이지네이션
+GET {{host}}/api/places?page=1&limit=1

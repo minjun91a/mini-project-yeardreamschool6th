@@ -1,7 +1,70 @@
 const express = require('express');
 const router = express.Router();
+
 const Place = require('../models/place');
 const auth = require('../middlewares/auth');
+
+const escapeRegex = (text) => {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+router.get('/', async (req, res) => {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(
+        Math.max(Number(req.query.limit) || 20, 1),
+        100
+    );
+
+    const q = req.query.q?.trim();
+    const category = req.query.category?.trim();
+
+    const filter = {};
+
+    if (q) {
+        const escapedQ = escapeRegex(q);
+
+        filter.$or = [
+            {
+                name: {
+                    $regex: escapedQ,
+                    $options: 'i'
+                }
+            },
+            {
+                address: {
+                    $regex: escapedQ,
+                    $options: 'i'
+                }
+            }
+        ];
+    }
+
+    if (category) {
+        filter.category = category;
+    }
+
+    const [places, total] = await Promise.all([
+        Place.find(filter)
+            .sort({createdAt: -1})
+            .skip((page - 1) * limit)
+            .limit(limit),
+
+        Place.countDocuments(filter)
+    ]);
+
+    return res.status(200).json({
+        success: true,
+        data: {
+            places,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        }
+    });
+});
 
 router.post('/', auth, async (req, res) => {
     const {
