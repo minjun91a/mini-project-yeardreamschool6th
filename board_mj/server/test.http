@@ -134,3 +134,12 @@ GET {{host}}/api/places?category=cafe
 
 ### 장소 페이지네이션
 GET {{host}}/api/places?page=1&limit=1
+
+### 장소 상세 조회 - 정상
+GET {{host}}/api/places/6a9672a70aa54f9ad4153f75
+
+### 장소 상세 조회 - 잘못된 ObjectId
+GET {{host}}/api/places/abc
+
+### 장소 상세 조회 - 존재하지 않는 장소
+GET {{host}}/api/places/000000000000000000000000

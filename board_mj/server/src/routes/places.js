@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 
 const Place = require('../models/place');
 const auth = require('../middlewares/auth');
@@ -63,6 +64,37 @@ router.get('/', async (req, res) => {
                 totalPages: Math.ceil(total / limit)
             }
         }
+    });
+});
+
+router.get('/:id', async (req, res) => {
+    const {id} = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_ID',
+                message: '올바르지 않은 장소 ID입니다.'
+            }
+        });
+    }
+
+    const place = await Place.findById(id);
+
+    if (!place) {
+        return res.status(404).json({
+            success: false,
+            error: {
+                code: 'PLACE_NOT_FOUND',
+                message: '장소를 찾을 수 없습니다.'
+            }
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        data: {place}
     });
 });
 
