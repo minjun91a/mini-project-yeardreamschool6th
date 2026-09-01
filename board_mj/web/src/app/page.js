@@ -1,13 +1,16 @@
 import {apiFetch} from "@/lib/api";
 import Link from "next/link";
 
-export default async function Home() {
+export default async function Home({searchParams}) {
+    const params = await searchParams;
+    const page = Number(params.page) || 1;
+
     const data = await apiFetch('/api/posts');
+    const totalPages = Math.ceil(data.total / data.limit);
 
     return (
-        <main style={{padding: 24, maxWidth: 800, margin: '0 auto'}}>
+        <main>
             <h1>게시판</h1>
-
             <Link href="/posts/new">글쓰기</Link>
 
             {data.items.length === 0 ? (
@@ -23,6 +26,16 @@ export default async function Home() {
                         </li>
                     ))}
                 </ul>
+            )}
+
+            {totalPages > 1 && (
+                <nav style={{display: 'flex', gep: 8, marginTop: 20}}>
+                    {Array.from({length: totalPages}, (_, i) => i + 1).map((n) => (
+                        <Link key={n} href={`/?page=${n}`} style={{fontWeight: n === page ? 'bold' : 'normal'}}>
+                            {n}
+                        </Link>
+                    ))}
+                </nav>
             )}
 
             <p>전체 {data.total}건</p>

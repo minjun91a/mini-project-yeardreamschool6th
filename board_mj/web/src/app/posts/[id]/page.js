@@ -2,6 +2,7 @@ import {apiFetch} from "@/lib/api";
 import {notFound} from "next/navigation";
 import Link from "next/link";
 import OwnerActions from "@/app/posts/[id]/OwnerActions";
+import Comments from './Comments';
 
 export default async function PostDetail({params}) {
     const {id} = await params;
@@ -18,7 +19,6 @@ export default async function PostDetail({params}) {
 
     return (
         <main style={{padding:24, maxWidth: 800, margin: '0 auto'}}>
-            <OwnerActions postId={post._id} authorId={post.author?._id}/>
             <Link href="/">← 목록</Link>
 
             <h1>{post.title}</h1>
@@ -32,6 +32,8 @@ export default async function PostDetail({params}) {
             <hr />
 
             <div style={{whiteSpace: 'pre-wrap'}}>{post.content}</div>
+            <Comments postId={post._id}/>
+            <OwnerActions postId={post._id} authorId={post.author?._id}/>
         </main>
     );
 }
