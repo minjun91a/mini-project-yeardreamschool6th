@@ -91,19 +91,25 @@ export default function NowWritePage() {
     };
 
     return (
-        <main>
-            <h1>NOW 작성</h1>
+        <main className="now-write-page">
+            <h1 className="now-write-title">NOW 작성</h1>
 
             {error && (
                 <p>{error}</p>
             )}
 
             <form onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="place">장소</label>
+                <div className="now-write-field">
+                    <label
+                        htmlFor="place"
+                        className="now-write-label"
+                    >
+                        장소
+                    </label>
 
                     <select
                         id="place"
+                        className="now-write-select"
                         value={placeId}
                         onChange={(e) => setPlaceId(e.target.value)}
                         disabled={loading}
@@ -123,29 +129,40 @@ export default function NowWritePage() {
                     </select>
                 </div>
                 
-                <div>
-                    <p>현재 상태</p>
+                <div className="now-write-field">
+                    <p className="now-write-label">현재 상태</p>
 
-                    {STATUS_OPTIONS.map((option) => (
-                        <label key={option.value}>
-                            <input
-                                type="radio"
-                                name="status"
-                                value={option.value}
-                                checked={status === option.value}
-                                onChange={(e) => setStatus(e.target.value)}
-                            />
+                    <div className="now-status-option">
+                        {STATUS_OPTIONS.map((option) => (
+                            <label
+                                key={option.value}
+                                className="now-status-option"
+                            >
+                                <input
+                                    type="radio"
+                                    name="status"
+                                    value={option.value}
+                                    checked={status === option.value}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                />
 
-                            {option.label}
-                        </label>
-                    ))}
+                                {option.label}
+                            </label>
+                        ))}
+                    </div>
                 </div>
 
-                <div>
-                    <label htmlFor="content">현장 한마디</label>
+                <div className="now-write-field">
+                    <label
+                        htmlFor="content"
+                        className="now-write-label"
+                    >
+                        현장 한마디
+                    </label>
 
                     <textarea
                         id="content"
+                        className="now-write-textarea"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="지금 상황을 알려주세요."
@@ -155,6 +172,7 @@ export default function NowWritePage() {
 
                 <button
                     type="submit"
+                    className="now-write-submit"
                     disabled={submitting}
                 >
                     {submitting ? '등록 중...' : 'NOW 등록'}
