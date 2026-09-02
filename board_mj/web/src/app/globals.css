@@ -363,7 +363,37 @@ hr {
         padding: 24px 16px 60px;
     }
 
+    .now-header {
+        margin-bottom: 20px;
+    }
+
+    .now-title {
+        font-size: 26px;
+    }
+
+    .now-write-button {
+        padding: 9px 14px;
+        font-size: 13px;
+    }
+
     .now-card {
         padding: 18px;
+        border-radius: 14px;
+    }
+
+    .now-place-name {
+        font-size: 17px;
+    }
+
+    .now-address {
+        font-size: 12px;
+    }
+
+    .now-content {
+        font-size: 15px;
+    }
+
+    .now-footer {
+        font-size: 11px;
     }
 }
