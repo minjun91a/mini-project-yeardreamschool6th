@@ -255,3 +255,15 @@ GET {{host}}/api/posts?kind=board
 
 ### 전체 게시글 목록
 GET {{host}}/api/posts
+
+### 특정 장소 NOW 조회 - 정상
+GET {{host}}/api/places/6a9672a70aa54f9ad4153f75/now
+
+### 특정 장소 NOW 조회 - 잘못된 ID
+GET {{host}}/api/places/abc/now
+
+### 특정 장소 NOW 조회 - 없는 장소
+GET {{host}}/api/places/000000000000000000000000/now
+
+### 특정 장소 NOW 조회 - 페이지네이션
+GET {{host}}/api/places/6a9672a70aa54f9ad4153f75/now?page=1&limit=1

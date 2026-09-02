@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-
+const Post = require('../models/post');
 const Place = require('../models/place');
 const auth = require('../middlewares/auth');
 
@@ -64,6 +64,55 @@ router.get('/', async (req, res) => {
                 totalPages: Math.ceil(total / limit)
             }
         }
+    });
+});
+
+router.get('/:id/now', async (req, res) => {
+    const {id} = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_ID',
+                message: '올바르지 않은 장소 ID입니다.'
+            }
+        });
+    }
+
+    const place = await Place.findById(id);
+
+    if (!place) {
+        return res.status(404).json({
+            success: false,
+            error: {
+                code: 'PLACE_NOT_FOUND',
+                message: '장소를 찾을 수 없습니다.'
+            }
+        });
+    }
+
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, parseInt(req.query.limit) || 10);
+
+    const filter = {
+        kind: 'now',
+        place: id
+    };
+
+    const items = await Post.find(filter)
+        .sort({createdAt: -1})
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('author', 'id name')
+        .populate('place', 'name category address')
+        .lean();
+
+    const total = await Post.countDocuments(filter);
+
+    return res.json({
+        success: true,
+        data: {items, page, limit, total}
     });
 });
 
