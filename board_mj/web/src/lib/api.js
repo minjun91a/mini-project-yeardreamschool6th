@@ -13,6 +13,17 @@ export async function apiFetch(path, options = {}) {
 
     const json = await res.json();
 
+    if (res.status === 401 && typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+
+        const currentPath = window.location.pathname + window.location.search;
+
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+
+        return;
+    }
+
     if (!res.ok) {
         const err = new Error(json.error?.message || '요청 실패');
         err.status = res.status;

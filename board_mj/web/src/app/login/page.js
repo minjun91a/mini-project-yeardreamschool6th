@@ -24,7 +24,10 @@ export default function Login(){
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
 
-            router.push('/');
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get('redirect') || '/';
+
+            router.push(redirect);
         } catch (e) {
             setError(e.message);
         } finally {
