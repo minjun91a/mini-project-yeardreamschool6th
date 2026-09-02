@@ -63,20 +63,25 @@ export default function Comments({postId}) {
     }
 
     return (
-        <section style={{marginTop: 32}}>
+        <section className="comment-section">
             <h2>댓글 {items.length}</h2>
 
             {error && <p style={{color: 'red'}}>{error}</p>}
 
             {me ? (
-                <div>
+                <div className="comment-form">
                     <textarea
+                        className="comment-textarea"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="댓글을 입력하세요"
                         rows={3}
                     />
-                    <button onClick={handleSubmit} disabled={loading}>
+                    <button
+                        className="comment-submit"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                    >
                         {loading ? '등록 중...' : '등록'}
                     </button>
                 </div>
@@ -84,14 +89,27 @@ export default function Comments({postId}) {
                 <p>댓글을 쓰려면 로그인하세요.</p>
             )}
 
-            <ul>
+            <ul className="comment-list">
                 {items.map((c) => (
-                    <li key={c._id}>
-                        <strong>{c.author?.name ?? '알 수 없음'}</strong>{' '}
-                        {c.content}{' '}
-                        {me && me._id === c.author?._id && (
-                            <button onClick={() => handleDelete(c._id)}>삭제</button>
-                        )}
+                    <li key={c._id} className="comment-item">
+                        <div className="comment-head">
+                            <strong className="comment-author">
+                                {c.author?.name ?? '알 수 없음'}
+                            </strong>
+
+                            {me && me._id === c.author?._id && (
+                                <button
+                                    className="comment-delete"
+                                    onClick={() => handleDelete(c._id)}
+                                >
+                                    삭제
+                                </button>
+                            )}
+                        </div>
+
+                        <p className="comment-content">
+                            {c.content}
+                        </p>
                     </li>
                 ))}
             </ul>

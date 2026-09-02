@@ -18,10 +18,10 @@ export default async function PostDetail({params}) {
     const post = data.post;
 
     return (
-        <main>
+        <main className="post-detail">
             <Link href="/" className="muted">← 뒤로</Link>
 
-            <div className="card-head" style={{ padding: '20px 4px 0' }}>
+            <div className="card-head">
                 <div className="avatar">{post.author?.name?.[0] ?? '?'}</div>
                 <div>
                     <div className="name">{post.author?.name ?? '알 수 없음'}</div>
@@ -29,13 +29,13 @@ export default async function PostDetail({params}) {
                 </div>
             </div>
 
-            <h1 style={{ marginTop: 20 }}>{post.title}</h1>
+            <h1 className="post-detail-title">{post.title}</h1>
 
-            <div style={{ whiteSpace: 'pre-wrap', fontSize: 15, lineHeight: 1.7 }}>
+            <div className="post-detail-content">
                 {post.content}
             </div>
 
-            <div className="card-actions" style={{ borderTop: 'none', paddingLeft: 0 }}>
+            <div className="card-actions post-detail-stats">
                 <span>💬 {post.commentCount}</span>
                 <span>👁 {post.viewCount}</span>
             </div>

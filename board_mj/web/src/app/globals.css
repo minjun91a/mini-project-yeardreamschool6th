@@ -654,6 +654,96 @@ textarea:focus {
     color: #888;
 }
 
+/* ========================================
+   Post Detail
+======================================== */
+
+.post-detail-title {
+    margin-top: 20px;
+}
+
+.post-detail-content {
+    white-space: pre-wrap;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.post-detail-stats {
+    border-top: none;
+    padding-left: 0;
+}
+
+/* ========================================
+   Comments
+======================================== */
+
+.comments-section {
+    margin-top: 32px;
+}
+
+.comment-form {
+    margin-bottom: 24px;
+}
+
+.comment-textarea {
+    min-height: 100px;
+}
+
+.comment-submit {
+    margin-top: 4px;
+}
+
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.comment-item {
+    padding: 14px;
+
+    background: #0a0a0a;
+
+    border: 1px solid #1f1f1f;
+    border-radius: 12px;
+}
+
+.comment-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 8px;
+}
+
+.comment-author {
+    font-size: 13px;
+}
+
+.comment-content {
+    margin: 0;
+
+    color: #d4d4d4;
+
+    font-size: 14px;
+    line-height: 1.6;
+
+    word-break: break-word;
+}
+
+.comment-delete {
+    padding: 5px 10px;
+
+    background: transparent;
+    color: #777;
+
+    border: 1px solid #262626;
+
+    font-size: 11px;
+}
+
 
 /* ========================================
    Tablet / Mobile
@@ -850,6 +940,89 @@ textarea:focus {
 
     .place-now-content {
         font-size: 14px;
+    }
+
+    /* Post Detail */
+
+    .post-detail {
+        padding-top: 20px;
+    }
+
+    .post-detail-title {
+        margin-top: 18px;
+        font-size: 22px;
+        line-height: 1.35;
+    }
+
+    .post-detail-content {
+        font-size: 15px;
+        line-height: 1.65;
+    }
+
+    .post-detail-stats {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .post-detail h1 {
+        font-size: 22px;
+        line-height: 1.35;
+    }
+
+    .post-detail .post-meta {
+        font-size: 12px;
+    }
+
+    .post-detail .post-content {
+        font-size: 15px;
+        line-height: 1.65;
+    }
+
+    .post-detail .post-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 18px;
+    }
+
+    .post-detail .post-actions button {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    .comment-form textarea {
+        min-height: 90px;
+        max-height: 180px;
+        margin-top: 6px;
+    }
+
+    .comment-form button {
+        margin-top: 4px;
+        padding: 9px 18px;
+        font-size: 13px;
+    }
+
+    /* Comments */
+
+    .comments-section {
+        margin-top: 28px;
+    }
+
+    .comment-textarea {
+        min-height: 84px;
+    }
+
+    .comment-submit {
+        padding: 8px 16px;
+
+        font-size: 13px;
+    }
+
+    .comment-item {
+        padding: 12px;
+    }
+
+    .comment-content {
+        font-size: 13px;
     }
 }
 
