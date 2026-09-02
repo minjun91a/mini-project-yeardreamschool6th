@@ -105,10 +105,21 @@ export default function NowPage() {
 
     return (
         <main className="now-page">
-            <header>
-                <h1 className="now-title">NOW</h1>
+            <header className="now-header">
+                <div>
+                    <p className="now-eyebrow">ago.</p>
+
+                    <h1 className="now-title">
+                        가고 싶은 곳의 <span>지금.</span>
+                    </h1>
+
+                    <p className="now-subtitle">
+                        방금 다녀온 사람들이 알려주는 가장 최신의 현장 정보
+                    </p>
+                </div>
+
                 <Link href="/now/write" className="now-write-button">
-                    NOW 작성
+                    지금 알려주기
                 </Link>
             </header>
 
@@ -140,13 +151,15 @@ export default function NowPage() {
                                 )}
                             </div>
 
-                            <div>
+                            <div className="now-status-row">
                                 <strong className={`now-status ${post.status}`}>
                                     {STATUS_LABEL[post.status] || post.status}
                                 </strong>
 
-                                <span className="now-freshness">
+                                <span className={`now-freshness ${freshness.type}`}>
                                     {freshness.label}
+                                    {' · '}
+                                    {formatRelativeTime(post.createdAt)}
                                 </span>
                             </div>
 
@@ -155,14 +168,13 @@ export default function NowPage() {
                             </p>
 
                             <footer className="now-footer">
-                            <span>
-                                {post.author?.name || '알 수 없음'}
-                            </span>
+                                <span>
+                                    {post.author?.name || '알 수 없음'}
+                                </span>
 
                                 <span>
-                                {' · '}
-                                    {formatRelativeTime(post.createdAt)}
-                            </span>
+                                    현장 제보
+                                </span>
                             </footer>
 
                         </article>
