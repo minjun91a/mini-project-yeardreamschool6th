@@ -560,6 +560,21 @@ textarea:focus {
     border-radius: 10px;
 }
 
+.selected-place {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.selected-place-name {
+    font-weight: 700;
+}
+
+.selected-place-address {
+    font-size: 14px;
+    color: #777;
+}
+
 /* ========================================
    Place Detail
 ======================================== */

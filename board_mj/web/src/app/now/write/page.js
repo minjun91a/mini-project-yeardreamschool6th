@@ -81,6 +81,24 @@ export default function NowWritePage() {
         }
     };
 
+    useEffect(() => {
+        if (selectedPlace) {
+            return;
+        }
+
+        if (!placeQuery.trim()) {
+            setPlaceResults([]);
+        }
+
+        const timer = setTimeout(() => {
+            searchPlaces(placeQuery);
+        }, 400);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [placeQuery, selectedPlace]);
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -150,8 +168,6 @@ export default function NowWritePage() {
 
                             setSelectedPlace(null);
                             setPlaceId('');
-
-                            searchPlaces(value);
                         }}
 
                         placeholder="장소 이름이나 주소를 검색하세요"
@@ -189,11 +205,11 @@ export default function NowWritePage() {
 
                     {selectedPlace && (
                         <div className="selected-place">
-                            <strong>
+                            <strong className="selected-place-name">
                                 {selectedPlace.name}
                             </strong>
 
-                            <span>
+                            <span className="selected-place-address">
                                 {selectedPlace.address}
                             </span>
                         </div>
