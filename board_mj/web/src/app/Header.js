@@ -24,10 +24,10 @@ export default function Header() {
     }
 
     return (
-        <header>
+        <header className="site-header">
             <Link href="/" className="logo">board</Link>
 
-            <span style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10}}>
+            <nav className="header-nav">
                 <Link href="/now" className="muted">
                     NOW
                 </Link>
@@ -35,15 +35,15 @@ export default function Header() {
                 {me ? (
                     <>
                         <Link href="/posts/new" className="muted">글쓰기</Link>
-                        <span className="muted">{me.name}</span>
-                        <button className="ghost" onClick={handleLogout}>로그아웃</button>
+                        <span className="muted header-user">{me.name}</span>
+                        <button className="ghost header-logout" onClick={handleLogout}>로그아웃</button>
                     </>
                 ) : (
                     <Link href="/login">
                         <button>로그인</button>
                     </Link>
                 )}
-            </span>
+            </nav>
         </header>
     );
 }
