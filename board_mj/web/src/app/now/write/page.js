@@ -1,6 +1,6 @@
 'use client'
 
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {apiFetch} from "@/lib/api";
 
@@ -12,6 +12,8 @@ const STATUS_OPTIONS = [
 
 export default function NowWritePage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const initialPlaceId = searchParams.get('placeId');
 
     const [places, setPlaces] = useState([]);
     const [placeId, setPlaceId] = useState('');
@@ -27,6 +29,16 @@ export default function NowWritePage() {
             try {
                 const data = await apiFetch('/api/places');
                 setPlaces(data.places);
+
+                if (initialPlaceId) {
+                    const exists = data.places.some(
+                        (place) => place._id === initialPlaceId
+                    );
+
+                    if (exists) {
+                        setPlaceId(initialPlaceId);
+                    }
+                }
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -35,7 +47,7 @@ export default function NowWritePage() {
         };
 
         loadPlaces();
-    }, []);
+    }, [initialPlaceId]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();

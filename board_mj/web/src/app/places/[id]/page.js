@@ -3,6 +3,7 @@
 import {useParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import {apiFetch} from "@/lib/api";
+import Link from "next/link";
 
 const STATUS_LABEL = {
     quiet: '🟢 여유',
@@ -58,6 +59,9 @@ export default function PlaceDetailPage() {
 
             <p>{place.category}</p>
             <p>{place.address}</p>
+            <Link href={`/now/write?placeId=${place._id}`}>
+                이 장소 NOW 작성
+            </Link>
 
             <hr />
 
