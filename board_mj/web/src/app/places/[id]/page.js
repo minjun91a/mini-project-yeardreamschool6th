@@ -11,6 +11,17 @@ const STATUS_LABEL = {
     busy: '🔴 혼잡'
 };
 
+const CATEGORY_LABEL = {
+    cafe: '카페',
+    restaurant: '음식점',
+    bar: '술집',
+    popup: '팝업',
+    shopping: '쇼핑',
+    park: '공원',
+    culture: '문화',
+    etc: '기타'
+};
+
 function formatRelativeTime(createdAt) {
     const now = new Date();
     const created = new Date(createdAt);
@@ -80,7 +91,7 @@ export default function PlaceDetailPage() {
                 <div>
                     <h1 className="place-title">{place.name}</h1>
 
-                    <p className="place-category">{place.category}</p>
+                    <p className="place-category">{CATEGORY_LABEL[place.category] || place.category}</p>
                     <p className="place-address">{place.address}</p>
                 </div>
 
@@ -123,16 +134,22 @@ export default function PlaceDetailPage() {
                 )}
 
                 {items.map((post) => (
-                    <article key={post._id}>
-                        <strong>
-                            {STATUS_LABEL[post.status] || post.status}
-                        </strong>
+                    <article key={post._id} className="place-now-card">
+                        <div className="place-now-card-header">
+                            <strong className={`now-status ${post.status}`}>
+                                {STATUS_LABEL[post.status] || post.status}
+                            </strong>
 
-                        <p>{post.content}</p>
+                            <span className="place-now-time">
+                                {formatRelativeTime(post.createdAt)}
+                            </span>
+                        </div>
 
-                        <small>
+                        <p className="place-now-content">{post.content}</p>
+
+                        <footer className="place-now-footer">
                             {post.author?.name || '알 수 없음'}
-                        </small>
+                        </footer>
                     </article>
                 ))}
             </section>
