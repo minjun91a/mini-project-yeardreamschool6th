@@ -26,7 +26,12 @@ export default function Header() {
     return (
         <header>
             <Link href="/" className="logo">board</Link>
+
             <span style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10}}>
+                <Link href="/now" className="muted">
+                    NOW
+                </Link>
+
                 {me ? (
                     <>
                         <Link href="/posts/new" className="muted">글쓰기</Link>
