@@ -12,7 +12,6 @@ export default async function Home({searchParams}) {
     return (
         <main>
             <h1>게시판</h1>
-            <Link href="/posts/new">글쓰기</Link>
 
             {data.items.length === 0 ? (
                 <p>아직 글이 없습니다.</p>
