@@ -10,6 +10,36 @@ const STATUS_LABEL = {
     busy: '🔴 혼잡'
 };
 
+function formatRelativeTime(createdAt) {
+    const now = new Date();
+    const created = new Date(createdAt);
+
+    const diff = now - created;
+
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (seconds < 60) {
+        return '방금 전';
+    }
+
+    if (minutes < 60) {
+        return `${minutes}분 전`;
+    }
+
+    if (hours < 24) {
+        return `${hours}시간 전`;
+    }
+
+    if (days < 7) {
+        return `${days}일 전`;
+    }
+
+    return created.toLocaleDateString('ko-KR');
+}
+
 export default function NowPage() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -41,10 +71,12 @@ export default function NowPage() {
 
     return (
         <main>
-            <h1>NOW</h1>
-            <Link href="/now/write">
-                NOW 작성
-            </Link>
+            <header>
+                <h1>NOW</h1>
+                <Link href="/now/write">
+                    NOW 작성
+                </Link>
+            </header>
 
             {items.length === 0 && (
                 <p>아직 등록된 NOW 정보가 없습니다.</p>
@@ -52,25 +84,42 @@ export default function NowPage() {
 
             {items.map((post) => (
                 <article key={post._id}>
-                    <h2>
+
+                    <div>
                         {post.place ? (
                             <Link href={`/places/${post.place._id}`}>
-                                {post.place.name}
+                                <h2>{post.place.name}</h2>
                             </Link>
                         ) : (
-                            '장소 정보 없음'
+                            <h2>장소 정보 없음</h2>
                         )}
-                    </h2>
+
+                        {post.place?.address && (
+                            <p>{post.place.address}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <strong>
+                            {STATUS_LABEL[post.status] || post.status}
+                        </strong>
+                    </div>
 
                     <p>
-                        {STATUS_LABEL[post.status] || post.status}
+                        {post.content}
                     </p>
 
-                    <p>{post.content}</p>
+                    <footer>
+                        <span>
+                            {post.author?.name || '알 수 없음'}
+                        </span>
 
-                    <p>
-                        작성자: {post.author?.name || '알 수 없음'}
-                    </p>
+                        <span>
+                            {' · '}
+                            {formatRelativeTime(post.createdAt)}
+                        </span>
+                    </footer>
+
                 </article>
             ))}
         </main>
