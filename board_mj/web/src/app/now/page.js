@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {apiFetch} from "@/lib/api";
+import Link from "next/link";
 
 const STATUS_LABEL = {
     quiet: '🟢 여유',
@@ -41,6 +42,9 @@ export default function NowPage() {
     return (
         <main>
             <h1>NOW</h1>
+            <Link href="/now/write">
+                NOW 작성
+            </Link>
 
             {items.length === 0 && (
                 <p>아직 등록된 NOW 정보가 없습니다.</p>
@@ -48,7 +52,15 @@ export default function NowPage() {
 
             {items.map((post) => (
                 <article key={post._id}>
-                    <h2>{post.place?.name || '장소 정보 없음'}</h2>
+                    <h2>
+                        {post.place ? (
+                            <Link href={`/places/${post.place._id}`}>
+                                {post.place.name}
+                            </Link>
+                        ) : (
+                            '장소 정보 없음'
+                        )}
+                    </h2>
 
                     <p>
                         {STATUS_LABEL[post.status] || post.status}
