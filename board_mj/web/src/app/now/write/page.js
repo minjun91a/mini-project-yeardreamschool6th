@@ -15,30 +15,35 @@ export default function NowWritePage() {
     const searchParams = useSearchParams();
     const initialPlaceId = searchParams.get('placeId');
 
-    const [places, setPlaces] = useState([]);
     const [placeId, setPlaceId] = useState('');
+    const [placeQuery, setPlaceQuery] = useState('');
+    const [placeResults, setPlaceResults] = useState([]);
+    const [selectedPlace, setSelectedPlace] = useState(null);
+
     const [status, setStatus] = useState('');
     const [content, setContent] = useState('');
 
     const [loading, setLoading] = useState(true);
+    const [searchingPlaces, setSearchingPlaces] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const loadPlaces = async () => {
+        const loadInitialPlace = async () => {
             try {
-                const data = await apiFetch('/api/places');
-                setPlaces(data.places);
-
-                if (initialPlaceId) {
-                    const exists = data.places.some(
-                        (place) => place._id === initialPlaceId
-                    );
-
-                    if (exists) {
-                        setPlaceId(initialPlaceId);
-                    }
+                if (!initialPlaceId) {
+                    return;
                 }
+
+                const data = await apiFetch(
+                    `/api/places/${initialPlaceId}`
+                );
+
+                const place = data.place;
+
+                setPlaceId(place._id);
+                setSelectedPlace(place);
+                setPlaceQuery(place.name);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -46,8 +51,35 @@ export default function NowWritePage() {
             }
         };
 
-        loadPlaces();
+        if (initialPlaceId) {
+            loadInitialPlace();
+        } else {
+            setLoading(false);
+        }
     }, [initialPlaceId]);
+
+    const searchPlaces = async (query) => {
+        setError('');
+
+        if (!query.trim()) {
+            setPlaceResults([]);
+            return;
+        }
+
+        try {
+            setSearchingPlaces(true);
+
+            const data = await apiFetch(
+                `/api/places?q=${encodeURIComponent(query)}&limit=10`
+            );
+
+            setPlaceResults(data.places || []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSearchingPlaces(false);
+        }
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -101,38 +133,77 @@ export default function NowWritePage() {
             <form onSubmit={handleSubmit}>
                 <div className="now-write-field">
                     <label
-                        htmlFor="place"
+                        htmlFor="place-search"
                         className="now-write-label"
                     >
                         장소
                     </label>
 
-                    <select
-                        id="place"
-                        className="now-write-select"
-                        value={placeId}
-                        onChange={(e) => setPlaceId(e.target.value)}
-                        disabled={loading}
-                    >
-                        <option value="">
-                            {loading ? '장소 불러오는 중...' : '장소를 선택해주세요.'}
-                        </option>
+                    <input
+                        id="place-search"
+                        type="text"
+                        value={placeQuery}
+                        onChange={(e) => {
+                            const value = e.target.value;
 
-                        {places.map((place) => (
-                            <option
-                                key={place._id}
-                                value={place._id}
-                            >
-                                {place.name}
-                            </option>
-                        ))}
-                    </select>
+                            setPlaceQuery(value);
+
+                            setSelectedPlace(null);
+                            setPlaceId('');
+
+                            searchPlaces(value);
+                        }}
+
+                        placeholder="장소 이름이나 주소를 검색하세요"
+                        disabled={loading}
+                    />
+
+                    {searchingPlaces && (
+                        <p>장소 검색 중...</p>
+                    )}
+
+                    {placeResults.length > 0 && (
+                        <div className="place-search-results">
+                            {placeResults.map((place) => (
+                                <button
+                                    key={place._id}
+                                    type="button"
+                                    className="place-search-item"
+                                    onClick={() => {
+                                        setSelectedPlace(place);
+                                        setPlaceId(place._id);
+
+                                        setPlaceQuery(place.name);
+                                        setPlaceResults([]);
+                                    }}
+                                >
+                                    <strong>{place.name}</strong>
+
+                                    <span>
+                                        {place.address}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {selectedPlace && (
+                        <div className="selected-place">
+                            <strong>
+                                {selectedPlace.name}
+                            </strong>
+
+                            <span>
+                                {selectedPlace.address}
+                            </span>
+                        </div>
+                    )}
                 </div>
-                
+
                 <div className="now-write-field">
                     <p className="now-write-label">현재 상태</p>
 
-                    <div className="now-status-option">
+                    <div className="now-status-options">
                         {STATUS_OPTIONS.map((option) => (
                             <label
                                 key={option.value}
