@@ -104,10 +104,10 @@ export default function NowPage() {
     }
 
     return (
-        <main>
+        <main className="now-page">
             <header>
-                <h1>NOW</h1>
-                <Link href="/now/write">
+                <h1 className="now-title">NOW</h1>
+                <Link href="/now/write" className="now-write-button">
                     NOW 작성
                 </Link>
             </header>
@@ -115,59 +115,60 @@ export default function NowPage() {
             {items.length === 0 && (
                 <p>아직 등록된 NOW 정보가 없습니다.</p>
             )}
+            <section className="now-feed">
+                {items.map((post) => {
+                    const freshness = getFreshness(post.createdAt);
 
-            {items.map((post) => {
-                const freshness = getFreshness(post.createdAt);
+                    return (
+                        <article key={post._id} className="now-card">
 
-                return (
-                    <article key={post._id}>
+                            <div className="now-place-area">
+                                {post.place ? (
+                                    <Link href={`/places/${post.place._id}`} className="now-place-link">
+                                        <h2 className="now-place-name">{post.place.name}</h2>
+                                    </Link>
+                                ) : (
+                                    <h2 className="now-place-name">장소 정보 없음</h2>
+                                )}
 
-                        <div>
-                            {post.place ? (
-                                <Link href={`/places/${post.place._id}`}>
-                                    <h2>{post.place.name}</h2>
-                                </Link>
-                            ) : (
-                                <h2>장소 정보 없음</h2>
-                            )}
+                                {post.place?.category && (
+                                    <span className="now-category">{post.place.category}</span>
+                                )}
 
-                            {post.place?.category && (
-                                <p>{post.place.category}</p>
-                            )}
+                                {post.place?.address && (
+                                    <p className="now-address">{post.place.address}</p>
+                                )}
+                            </div>
 
-                            {post.place?.address && (
-                                <p>{post.place.address}</p>
-                            )}
-                        </div>
+                            <div>
+                                <strong className={`now-status ${post.status}`}>
+                                    {STATUS_LABEL[post.status] || post.status}
+                                </strong>
 
-                        <div>
-                            <strong>
-                                {STATUS_LABEL[post.status] || post.status}
-                            </strong>
-                            <br/>
+                                <span className="now-freshness">
+                                    {freshness.label}
+                                </span>
+                            </div>
+
+                            <p className="now-content">
+                                {post.content}
+                            </p>
+
+                            <footer className="now-footer">
                             <span>
-                                {freshness.label}
+                                {post.author?.name || '알 수 없음'}
                             </span>
-                        </div>
 
-                        <p>
-                            {post.content}
-                        </p>
+                                <span>
+                                {' · '}
+                                    {formatRelativeTime(post.createdAt)}
+                            </span>
+                            </footer>
 
-                        <footer>
-                        <span>
-                            {post.author?.name || '알 수 없음'}
-                        </span>
-
-                            <span>
-                            {' · '}
-                                {formatRelativeTime(post.createdAt)}
-                        </span>
-                        </footer>
-
-                    </article>
-                );
-            })}
+                        </article>
+                    );
+                })}
+            </section>
         </main>
     );
 }
