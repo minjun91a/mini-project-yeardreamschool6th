@@ -131,6 +131,10 @@ export default function NowPage() {
                                 <h2>장소 정보 없음</h2>
                             )}
 
+                            {post.place?.category && (
+                                <p>{post.place.category}</p>
+                            )}
+
                             {post.place?.address && (
                                 <p>{post.place.address}</p>
                             )}

@@ -11,6 +11,25 @@ const STATUS_LABEL = {
     busy: '🔴 혼잡'
 };
 
+function formatRelativeTime(createdAt) {
+    const now = new Date();
+    const created = new Date(createdAt);
+
+    const diff = now - created;
+
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (seconds < 60) return '방금 전';
+    if (minutes < 60)  return `${minutes}분 전`;
+    if (hours < 24) return `${hours}시간 전`;
+    if (days < 7) return `${days}일 전`;
+
+    return created.toLocaleDateString('ko-KR');
+}
+
 export default function PlaceDetailPage() {
     const params = useParams();
     const id = params.id;
@@ -53,12 +72,36 @@ export default function PlaceDetailPage() {
         return <main>장소를 찾을 수 없습니다.</main>
     }
 
+    const latestNow = items.length > 0 ? items[0] : null;
+
     return (
         <main>
             <h1>{place.name}</h1>
 
             <p>{place.category}</p>
             <p>{place.address}</p>
+
+            <section>
+                <h2>현재 상태</h2>
+
+                {latestNow ? (
+                    <>
+                        <strong>
+                            {STATUS_LABEL[latestNow.status] || latestNow.status}
+                        </strong>
+
+                        <p>
+                            최근 업데이트 {formatRelativeTime(latestNow.createdAt)}
+                        </p>
+
+                        <p>
+                            {latestNow.content}
+                        </p>
+                    </>
+                ) : (
+                    <p>아직 등록된 NOW 정보가 없습니다.</p>
+                )}
+            </section>
             <Link href={`/now/write?placeId=${place._id}`}>
                 이 장소 NOW 작성
             </Link>
