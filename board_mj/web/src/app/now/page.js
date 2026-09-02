@@ -40,6 +40,40 @@ function formatRelativeTime(createdAt) {
     return created.toLocaleDateString('ko-KR');
 }
 
+function getFreshness(createdAt) {
+    const now = new Date();
+    const created = new Date(createdAt);
+
+    const diff = now - created;
+    const hours = diff / (1000 * 60 * 60);
+
+    if (hours < 1) {
+        return {
+            type: 'fresh',
+            label: '실시간'
+        };
+    }
+
+    if (hours < 3) {
+        return {
+            type: 'recent',
+            label: '최근 정보'
+        };
+    }
+
+    if (hours < 24) {
+        return {
+            type: 'old',
+            label: '시간이 지난 정보'
+        };
+    }
+
+    return {
+        type: 'expired',
+        label: '오래된 정보'
+    };
+}
+
 export default function NowPage() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -82,46 +116,54 @@ export default function NowPage() {
                 <p>아직 등록된 NOW 정보가 없습니다.</p>
             )}
 
-            {items.map((post) => (
-                <article key={post._id}>
+            {items.map((post) => {
+                const freshness = getFreshness(post.createdAt);
 
-                    <div>
-                        {post.place ? (
-                            <Link href={`/places/${post.place._id}`}>
-                                <h2>{post.place.name}</h2>
-                            </Link>
-                        ) : (
-                            <h2>장소 정보 없음</h2>
-                        )}
+                return (
+                    <article key={post._id}>
 
-                        {post.place?.address && (
-                            <p>{post.place.address}</p>
-                        )}
-                    </div>
+                        <div>
+                            {post.place ? (
+                                <Link href={`/places/${post.place._id}`}>
+                                    <h2>{post.place.name}</h2>
+                                </Link>
+                            ) : (
+                                <h2>장소 정보 없음</h2>
+                            )}
 
-                    <div>
-                        <strong>
-                            {STATUS_LABEL[post.status] || post.status}
-                        </strong>
-                    </div>
+                            {post.place?.address && (
+                                <p>{post.place.address}</p>
+                            )}
+                        </div>
 
-                    <p>
-                        {post.content}
-                    </p>
+                        <div>
+                            <strong>
+                                {STATUS_LABEL[post.status] || post.status}
+                            </strong>
+                            <br/>
+                            <span>
+                                {freshness.label}
+                            </span>
+                        </div>
 
-                    <footer>
+                        <p>
+                            {post.content}
+                        </p>
+
+                        <footer>
                         <span>
                             {post.author?.name || '알 수 없음'}
                         </span>
 
-                        <span>
+                            <span>
                             {' · '}
-                            {formatRelativeTime(post.createdAt)}
+                                {formatRelativeTime(post.createdAt)}
                         </span>
-                    </footer>
+                        </footer>
 
-                </article>
-            ))}
+                    </article>
+                );
+            })}
         </main>
     );
 }
