@@ -23,7 +23,7 @@ function formatRelativeTime(createdAt) {
     const days = Math.floor(hours / 24);
 
     if (seconds < 60) return '방금 전';
-    if (minutes < 60)  return `${minutes}분 전`;
+    if (minutes < 60) return `${minutes}분 전`;
     if (hours < 24) return `${hours}시간 전`;
     if (days < 7) return `${days}일 전`;
 
@@ -75,58 +75,67 @@ export default function PlaceDetailPage() {
     const latestNow = items.length > 0 ? items[0] : null;
 
     return (
-        <main>
-            <h1>{place.name}</h1>
+        <main className="place-page">
+            <div className="place-header">
+                <div>
+                    <h1 className="place-title">{place.name}</h1>
 
-            <p>{place.category}</p>
-            <p>{place.address}</p>
+                    <p className="place-category">{place.category}</p>
+                    <p className="place-address">{place.address}</p>
+                </div>
 
-            <section>
-                <h2>현재 상태</h2>
+                <Link href={`/now/write?placeId=${place._id}`} className="place-now-button">
+                    이 장소 NOW 작성
+                </Link>
+            </div>
+
+            <section className="place-current-section">
+                <h2 className="place-section-title">현재 상태</h2>
 
                 {latestNow ? (
-                    <>
-                        <strong>
-                            {STATUS_LABEL[latestNow.status] || latestNow.status}
-                        </strong>
+                    <div className="place-current-card">
+                        <div className="place-current-status">
+                            <strong className={`now-status ${latestNow.status}`}>
+                                {STATUS_LABEL[latestNow.status] || latestNow.status}
+                            </strong>
 
-                        <p>
-                            최근 업데이트 {formatRelativeTime(latestNow.createdAt)}
-                        </p>
+                            <span className="place-current-time">
+                                최근 업데이트 {formatRelativeTime(latestNow.createdAt)}
+                            </span>
+                        </div>
 
-                        <p>
+                        <p className="place-current-content">
                             {latestNow.content}
                         </p>
-                    </>
+                    </div>
                 ) : (
-                    <p>아직 등록된 NOW 정보가 없습니다.</p>
+                    <p className="place-empty">아직 등록된 NOW 정보가 없습니다.</p>
                 )}
             </section>
-            <Link href={`/now/write?placeId=${place._id}`}>
-                이 장소 NOW 작성
-            </Link>
 
-            <hr />
+            <hr/>
 
-            <h2>최근 NOW</h2>
+            <section className="place-now-section">
+                <h2 className="place-section-title">최근 NOW</h2>
 
-            {items.length === 0 && (
-                <p>아직 등록된 NOW 정보가 없습니다.</p>
-            )}
+                {items.length === 0 && (
+                    <p>아직 등록된 NOW 정보가 없습니다.</p>
+                )}
 
-            {items.map((post) => (
-                <article key={post._id}>
-                    <strong>
-                        {STATUS_LABEL[post.status] || post.status}
-                    </strong>
+                {items.map((post) => (
+                    <article key={post._id}>
+                        <strong>
+                            {STATUS_LABEL[post.status] || post.status}
+                        </strong>
 
-                    <p>{post.content}</p>
+                        <p>{post.content}</p>
 
-                    <small>
-                        {post.author?.name || '알 수 없음'}
-                    </small>
-                </article>
-            ))}
+                        <small>
+                            {post.author?.name || '알 수 없음'}
+                        </small>
+                    </article>
+                ))}
+            </section>
         </main>
     );
 }
