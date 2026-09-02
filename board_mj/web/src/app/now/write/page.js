@@ -159,6 +159,7 @@ export default function NowWritePage() {
 
                     <input
                         id="place-search"
+                        className="now-write-search"
                         type="text"
                         value={placeQuery}
                         onChange={(e) => {

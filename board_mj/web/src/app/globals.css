@@ -1,3 +1,17 @@
+:root {
+    --ago-bg: #FAFAF3;
+    --ago-text: #1F1F1F;
+    --ago-muted: #77776F;
+    --ago-border: #E8E8DE;
+
+    --ago-lime: #C6F047;
+    --ago-lime-hover: #B8E238;
+
+    --ago-green-bg: #EAF7E5;
+    --ago-yellow-bg: #FFF4CC;
+    --ago-red-bg: #FCE4E1;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -5,8 +19,8 @@
 body {
     margin: 0;
 
-    background: #000;
-    color: #f5f5f5;
+    background: var(--ago-bg);
+    color: var(--ago-text);
 
     font-family:
             system-ui,
@@ -44,10 +58,10 @@ header {
 
     padding: 14px 20px;
 
-    background: rgba(0, 0, 0, 0.75);
+    background: var(--ago-bg);
     backdrop-filter: blur(12px);
 
-    border-bottom: 1px solid #1a1a1a;
+    border-bottom: 1px solid var(--ago-border);
 }
 
 .site-header {
@@ -61,9 +75,14 @@ header {
 .site-header .logo {
     flex-shrink: 0;
 
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
+    color: var(--ago-text);
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+}
+
+.ago-logo-dot {
+    color: var(--ago-lime);
 }
 
 .header-nav {
@@ -320,8 +339,11 @@ textarea:focus {
 .now-title {
     margin: 0;
 
+    color: var(--ago-text);
+
     font-size: 30px;
     font-weight: 800;
+    letter-spacing: -0.8px;
 }
 
 .now-write-button {
@@ -331,17 +353,25 @@ textarea:focus {
 
     padding: 10px 18px;
 
-    border: 1px solid #3a3a3a;
-    border-radius: 12px;
+    background: var(--ago-lime);
+    color: var(--ago-text);
+
+    border: 0;
+    border-radius: 14px;
 
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
 
     text-decoration: none;
+
+    transition:
+            background 0.15s ease,
+            transform 0.15s ease;
 }
 
 .now-write-button:hover {
-    background: #111;
+    background: var(--ago-lime-hover);
+    transform: translateY(-1px);
 }
 
 .now-feed {
@@ -353,19 +383,21 @@ textarea:focus {
 .now-card {
     padding: 22px;
 
-    background: #111;
+    background: #ffffff;
 
-    border: 1px solid #262626;
-    border-radius: 16px;
+    border: 1px solid var(--ago-border);
+    border-radius: 18px;
 
     transition:
             transform 0.15s ease,
-            border-color 0.15s ease;
+            box-shadow 0.15s ease;
 }
 
 .now-card:hover {
     transform: translateY(-2px);
-    border-color: #444;
+
+    box-shadow:
+            0 8px 24px rgba(31, 31, 31, 0.06);
 }
 
 .now-place-area {
@@ -382,8 +414,10 @@ textarea:focus {
 
     margin: 0;
 
+    color: var(--ago-text);
+
     font-size: 19px;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .now-place-name:hover {
@@ -396,18 +430,19 @@ textarea:focus {
     margin-left: 8px;
     padding: 3px 8px;
 
-    background: #242424;
-    color: #bdbdbd;
+    background: #F1F1EB;
+    color: var(--ago-muted);
 
     border-radius: 999px;
 
     font-size: 12px;
+    font-weight: 600;
 }
 
 .now-address {
     margin: 8px 0 18px;
 
-    color: #8f8f8f;
+    color: var(--ago-muted);
 
     font-size: 13px;
     line-height: 1.5;
@@ -434,31 +469,31 @@ textarea:focus {
 }
 
 .now-status.quiet {
-    background: rgba(52, 211, 153, 0.12);
-    color: #6ee7b7;
+    background: var(--ago-green-bg);
+    color: #2F7A43;
 }
 
 .now-status.normal {
-    background: rgba(251, 191, 36, 0.12);
-    color: #fcd34d;
+    background: var(--ago-yellow-bg);
+    color: #9A6A00;
 }
 
 .now-status.busy {
-    background: rgba(248, 113, 113, 0.12);
-    color: #fca5a5;
+    background: var(--ago-red-bg);
+    color: #B94747;
 }
 
 .now-freshness {
-    color: #8f8f8f;
+    color: var(--ago-muted);
 
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .now-content {
     margin: 0 0 20px;
 
-    color: #f5f5f5;
+    color: var(--ago-text);
 
     font-size: 16px;
     line-height: 1.65;
@@ -473,12 +508,13 @@ textarea:focus {
 
     padding-top: 16px;
 
-    border-top: 1px solid #242424;
+    border-top: 1px solid var(--ago-border);
 
-    color: #777;
+    color: var(--ago-muted);
 
     font-size: 12px;
 }
+
 
 /* ========================================
    NOW Write
@@ -490,10 +526,18 @@ textarea:focus {
 
     margin: 0 auto;
     padding: 32px 20px 80px;
+
+    color: var(--ago-text);
 }
 
 .now-write-title {
     margin-bottom: 28px;
+
+    color: var(--ago-text);
+
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
 }
 
 .now-write-field {
@@ -505,42 +549,69 @@ textarea:focus {
 
     margin: 0 0 10px;
 
+    color: var(--ago-text);
+
     font-size: 14px;
     font-weight: 700;
 }
 
-.now-write-select {
+.now-write-search {
     width: 100%;
+    min-height: 48px;
 
     padding: 12px 14px;
 
-    background: #0a0a0a;
-    color: #f5f5f5;
+    background: #ffffff;
+    color: var(--ago-text);
 
-    border: 1px solid #262626;
-    border-radius: 10px;
+    border: 1px solid var(--ago-border);
+    border-radius: 14px;
 
     font-size: 14px;
+
+    outline: none;
+}
+
+.now-write-search:focus {
+    border-color: var(--ago-lime);
 }
 
 .now-status-options {
-    display: flex;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
 .now-status-option {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
+
+    min-height: 44px;
 
     padding: 10px 12px;
 
-    background: #111;
+    background: #ffffff;
+    color: var(--ago-text);
 
-    border: 1px solid #262626;
-    border-radius: 10px;
+    border: 1px solid var(--ago-border);
+    border-radius: 14px;
 
     cursor: pointer;
+
+    transition:
+            background 0.15s ease,
+            border-color 0.15s ease;
+}
+
+.now-status-option:hover {
+    border-color: #CFCFC3;
+}
+
+.now-status-option:has(input:checked) {
+    background: #F4F9DF;
+    border-color: var(--ago-lime);
 }
 
 .now-status-option input {
@@ -549,30 +620,87 @@ textarea:focus {
 }
 
 .now-write-textarea {
+    width: 100%;
     min-height: 130px;
+
+    padding: 14px;
+
+    background: #ffffff;
+    color: var(--ago-text);
+
+    border: 1px solid var(--ago-border);
+    border-radius: 14px;
+
+    font-size: 14px;
+    line-height: 1.6;
+
+    resize: vertical;
+    outline: none;
+}
+
+.now-write-textarea:focus {
+    border-color: var(--ago-lime);
 }
 
 .now-write-submit {
     width: 100%;
+    min-height: 48px;
 
     margin-top: 8px;
 
-    border-radius: 10px;
+    background: var(--ago-lime);
+    color: var(--ago-text);
+
+    border: 0;
+    border-radius: 14px;
+
+    font-size: 15px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+            background 0.15s ease,
+            transform 0.15s ease;
+}
+
+.now-write-submit:hover {
+    background: var(--ago-lime-hover);
+    transform: translateY(-1px);
+}
+
+.now-write-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .selected-place {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
+
+    margin-top: 8px;
+    padding: 12px 14px;
+
+    background: #F3F3EE;
+
+    border: 1px solid var(--ago-border);
+    border-radius: 14px;
 }
 
 .selected-place-name {
+    color: var(--ago-text);
+
+    font-size: 14px;
     font-weight: 700;
 }
 
 .selected-place-address {
-    font-size: 14px;
-    color: #777;
+    color: var(--ago-muted);
+
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 /* ========================================
@@ -873,11 +1001,32 @@ textarea:focus {
         font-size: 17px;
     }
 
+    .site-header .ghost.header-login,
+    .site-header .ghost.header-logout {
+        background: transparent;
+        color: var(--ago-text);
+
+        border: 1px solid var(--ago-text);
+        border-radius: 999px;
+    }
+
+    .site-header .ghost.header-logout:hover {
+        background: var(--ago-text);
+        color: var(--ago-bg);
+    }
+
     .header-nav {
         gap: 8px;
     }
 
-    .header-nav a,
+    .header-nav a {
+        color: var(--ago-text);
+    }
+
+    .header-nav a:hover {
+    color: #55554F;
+    }
+
     .header-user,
     .header-logout {
         font-size: 12px;
@@ -885,7 +1034,27 @@ textarea:focus {
     }
 
     .header-logout {
-        padding: 8px 12px;
+        padding: 8px 14px;
+
+        background: transparent;
+        color: var(--ago-text);
+
+        border: 1px solid var(--ago-text);
+        border-radius: 999px;
+
+        font-size: 13px;
+        font-weight: 600;
+
+        cursor: pointer;
+
+        transition:
+                background 0.15s ease,
+                color 0.15s ease;
+    }
+
+    .header-logout:hover {
+        background: var(--ago-text);
+        color: var(--ago-bg);
     }
 
     /* Board */
@@ -1209,4 +1378,258 @@ textarea:focus {
     .place-now-card {
         padding: 16px;
     }
+}
+
+/* ========================================
+   ago. Light Theme Override
+======================================== */
+
+/* ---------- Global form ---------- */
+
+input,
+textarea {
+    background: #ffffff;
+    color: var(--ago-text);
+
+    border-color: var(--ago-border);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #9A9A92;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--ago-lime);
+}
+
+
+/* ---------- Global button ---------- */
+
+button {
+    background: #F3F3EE;
+    color: var(--ago-text);
+}
+
+button:hover {
+    opacity: 1;
+}
+
+button:disabled {
+    background: #F0F0EA;
+    color: #B0B0A8;
+}
+
+button.ghost {
+    background: transparent;
+    color: var(--ago-text);
+
+    border-color: var(--ago-text);
+}
+
+button.ghost:hover {
+    background: var(--ago-text);
+    color: var(--ago-bg);
+}
+
+
+/* ---------- Header ---------- */
+
+.site-header .muted {
+    color: var(--ago-text);
+}
+
+.site-header .ghost.header-logout {
+    background: transparent;
+    color: var(--ago-text);
+
+    border: 1px solid var(--ago-text);
+}
+
+.site-header .ghost.header-logout:hover {
+    background: var(--ago-text);
+    color: var(--ago-bg);
+}
+
+
+/* ---------- Common ---------- */
+
+.muted {
+    color: var(--ago-muted);
+}
+
+hr {
+    border-top-color: var(--ago-border);
+}
+
+
+/* ---------- Board Card ---------- */
+
+.card {
+    background: #ffffff;
+
+    border-color: var(--ago-border);
+
+    box-shadow:
+            0 2px 10px rgba(31, 31, 31, 0.03);
+}
+
+.card:hover {
+    border-color: #D6D6CC;
+}
+
+.name {
+    color: var(--ago-text);
+}
+
+.date {
+    color: var(--ago-muted);
+}
+
+.card-title {
+    color: var(--ago-text);
+}
+
+.card-text {
+    color: #555550;
+}
+
+.card-actions {
+    border-top-color: var(--ago-border);
+    color: var(--ago-muted);
+}
+
+
+/* ---------- Post Detail ---------- */
+
+.post-detail {
+    color: var(--ago-text);
+}
+
+.post-detail-title {
+    color: var(--ago-text);
+}
+
+.post-detail-content {
+    color: #3D3D39;
+}
+
+.post-detail-stats {
+    color: var(--ago-muted);
+}
+
+
+/* ---------- Comments ---------- */
+
+.comments-section {
+    color: var(--ago-text);
+}
+
+.comment-textarea {
+    background: #ffffff;
+    color: var(--ago-text);
+
+    border: 1px solid var(--ago-border);
+}
+
+.comment-textarea:focus {
+    border-color: var(--ago-lime);
+}
+
+.comment-submit {
+    background: var(--ago-lime);
+    color: var(--ago-text);
+
+    font-weight: 700;
+}
+
+.comment-submit:hover {
+    background: var(--ago-lime-hover);
+}
+
+.comment-item {
+    background: #ffffff;
+
+    border-color: var(--ago-border);
+}
+
+.comment-author {
+    color: var(--ago-text);
+}
+
+.comment-content {
+    color: #4B4B46;
+}
+
+
+/* ---------- Place Detail ---------- */
+
+.place-page {
+    color: var(--ago-text);
+}
+
+.place-title {
+    color: var(--ago-text);
+}
+
+.place-category {
+    background: #F1F1EB;
+    color: #555550;
+}
+
+.place-address {
+    color: var(--ago-muted);
+}
+
+.place-now-button {
+    background: var(--ago-lime);
+    color: var(--ago-text);
+
+    border-color: var(--ago-lime);
+}
+
+.place-now-button:hover {
+    background: var(--ago-lime-hover);
+}
+
+.place-section-title {
+    color: var(--ago-text);
+}
+
+.place-current-card,
+.place-now-card {
+    background: #ffffff;
+
+    border: 1px solid var(--ago-border);
+
+    box-shadow:
+            0 3px 14px rgba(31, 31, 31, 0.04);
+}
+
+.place-current-content,
+.place-now-content {
+    color: var(--ago-text);
+}
+
+.place-current-time,
+.place-now-time,
+.place-now-footer {
+    color: var(--ago-muted);
+}
+
+.place-now-footer {
+    border-top-color: var(--ago-border);
+}
+
+.place-empty {
+    color: var(--ago-muted);
+}
+
+
+/* ---------- Error ---------- */
+
+.error {
+    color: #C74A4A;
 }

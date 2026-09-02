@@ -25,7 +25,9 @@ export default function Header() {
 
     return (
         <header className="site-header">
-            <Link href="/" className="logo">board</Link>
+            <Link href="/" className="logo">
+                ago<span className="ago-logo-dot">.</span>
+            </Link>
 
             <nav className="header-nav">
                 <Link href="/now" className="muted">
@@ -40,7 +42,7 @@ export default function Header() {
                     </>
                 ) : (
                     <Link href="/login">
-                        <button>로그인</button>
+                        <button className="ghost header-login">로그인</button>
                     </Link>
                 )}
             </nav>
