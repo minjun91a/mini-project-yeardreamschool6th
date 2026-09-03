@@ -146,7 +146,7 @@ textarea {
     font-family: inherit;
     font-size: 15px;
 
-    resize: vertical;
+    resize: none;
 
     transition:
             border-color 0.15s ease,
@@ -630,6 +630,144 @@ header {
     text-decoration: underline;
 }
 
+.now-place-search {
+    position: relative;
+
+    margin: 28px 0 34px;
+}
+
+.now-place-search-label {
+    display: block;
+
+    margin-bottom: 10px;
+
+    color: var(--ago-text);
+
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.now-place-search-input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.now-place-search-input {
+    width: 100%;
+    height: 50px;
+
+    padding: 0 16px;
+
+    background: var(--ago-surface);
+    color: var(--ago-text);
+
+    border: 1px solid var(--ago-border);
+    border-radius: 14px;
+
+    font-size: 14px;
+    outline: none;
+}
+
+.now-place-search-input:focus {
+    border-color: var(--ago-lime);
+}
+
+.now-place-search-clear {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 0;
+
+    transform: translateY(-50%);
+
+    background: transparent;
+    color: var(--ago-muted);
+
+    border: 0;
+    border-radius: 50%;
+
+    font-size: 18px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.now-place-search-clear:hover {
+    background: var(--ago-surface-soft);
+    color: var(--ago-text);
+    transform: translateY(-50%);
+}
+
+.now-place-search-message {
+    margin: 10px 4px 0;
+
+    color: var(--ago-muted);
+
+    font-size: 13px;
+}
+
+.now-place-search-results {
+    margin-top: 10px;
+
+    overflow: hidden;
+
+    background: var(--ago-surface);
+
+    border: 1px solid var(--ago-border);
+    border-radius: 14px;
+}
+
+.now-place-search-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    padding: 14px 16px;
+
+    color: var(--ago-text);
+    text-decoration: none;
+
+    border-bottom: 1px solid var(--ago-border);
+}
+
+.now-place-search-result:last-child {
+    border-bottom: 0;
+}
+
+.now-place-search-result:hover {
+    background: var(--ago-surface-soft);
+}
+
+.now-place-search-result strong {
+    display: block;
+
+    margin-bottom: 5px;
+
+    font-size: 14px;
+}
+
+.now-place-search-result span {
+    display: block;
+
+    color: var(--ago-muted);
+
+    font-size: 12px;
+}
+
+.now-place-search-arrow {
+    flex-shrink: 0;
+
+    font-size: 18px !important;
+}
+
 .now-category {
     display: inline-flex;
 
@@ -723,6 +861,36 @@ header {
     color: var(--ago-muted);
 
     font-size: 11px;
+}
+
+.now-empty {
+    margin-top: 32px;
+    padding: 36px 24px;
+
+    background: var(--ago-surface);
+    border: 1px dashed var(--ago-border);
+    border-radius: 20px;
+
+    text-align: center;
+}
+
+.now-empty strong {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: var(--ago-text);
+
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.now-empty p {
+    margin: 0;
+
+    color: var(--ago-muted);
+
+    font-size: 13px;
 }
 
 
@@ -904,7 +1072,7 @@ header {
     font-size: 14px;
     line-height: 1.6;
 
-    resize: vertical;
+    resize: none;
 }
 
 .now-write-textarea:focus {
@@ -1157,6 +1325,7 @@ header {
 .post-write-input,
 .post-write-textarea {
     margin: 0;
+    resize: none;
 
     background: var(--ago-surface);
     color: var(--ago-text);
@@ -1175,6 +1344,8 @@ header {
     padding: 14px;
 
     line-height: 1.6;
+
+    resize: none;
 }
 
 .post-write-input:focus,
@@ -1291,6 +1462,8 @@ header {
     color: var(--ago-text);
 
     border: 1px solid var(--ago-border);
+
+    resize: none;
 }
 
 .comment-textarea:focus {
@@ -1588,6 +1761,7 @@ header {
 
     .now-write-textarea {
         min-height: 110px;
+        resize: none;
     }
 
     .now-write-submit {
@@ -1653,6 +1827,7 @@ header {
 
     .post-write-textarea {
         min-height: 200px;
+        resize: none;
     }
 
     .post-write-submit {
@@ -1712,6 +1887,7 @@ header {
     .comment-textarea {
         min-height: 90px;
         max-height: 180px;
+        resize: none;
     }
 
     .comment-form button,
