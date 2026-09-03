@@ -945,44 +945,26 @@ header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 20px;
+    gap: 24px;
 
-    margin-bottom: 36px;
+    margin-bottom: 40px;
 }
 
 .place-title {
     margin: 0 0 8px;
     padding: 0;
 
-    color: var(--ago-text);
-
     font-size: 30px;
     font-weight: 800;
-    letter-spacing: -0.7px;
+    letter-spacing: -0.8px;
 }
 
 .place-category {
-    display: inline-block;
-
-    margin: 0 0 8px;
-    padding: 3px 8px;
-
-    background: var(--ago-surface-soft);
-    color: var(--ago-text-soft);
-
-    border-radius: var(--ago-radius-pill);
-
-    font-size: 12px;
-    font-weight: 700;
+    margin-bottom: 8px;
 }
 
 .place-address {
-    margin: 0;
-
     color: var(--ago-muted);
-
-    font-size: 13px;
-    line-height: 1.5;
 }
 
 .place-now-button {
@@ -990,45 +972,49 @@ header {
     align-items: center;
     justify-content: center;
 
-    flex-shrink: 0;
-
-    min-height: 44px;
-    padding: 0 16px;
+    min-width: 150px;
+    min-height: 48px;
+    padding: 0 22px;
 
     background: var(--ago-lime);
     color: var(--ago-text);
 
-    border: 1px solid var(--ago-lime);
-    border-radius: var(--ago-radius-md);
+    border-radius: var(--ago-radius-pill);
 
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 800;
+    text-decoration: none;
+    text-align: center;
 
-    transition:
-            background 0.15s ease,
-            transform 0.15s ease;
+    white-space: nowrap;
 }
 
 .place-now-button:hover {
     background: var(--ago-lime-hover);
-
-    transform: translateY(-1px);
 }
 
 .place-current-section {
-    margin-bottom: 40px;
+    margin-bottom: 42px;
 }
 
 .place-section-title {
-    margin: 0 0 16px;
-
-    color: var(--ago-text);
+    margin: 0 0 14px;
 
     font-size: 20px;
-    font-weight: 700;
+    font-weight: 800;
 }
 
-.place-current-card,
+.place-current-card {
+    padding: 22px;
+
+    background: var(--ago-surface);
+
+    border: 1px solid var(--ago-border);
+    border-radius: var(--ago-radius-xl);
+
+    box-shadow: var(--ago-shadow-card);
+}
+
 .place-now-card {
     background: var(--ago-surface);
 
@@ -1054,6 +1040,7 @@ header {
     color: var(--ago-muted);
 
     font-size: 12px;
+    font-weight: 600;
 }
 
 .place-current-content {
@@ -1061,9 +1048,8 @@ header {
 
     color: var(--ago-text);
 
-    line-height: 1.6;
-
-    word-break: break-word;
+    font-size: 16px;
+    line-height: 1.65;
 }
 
 .place-now-section {
@@ -1071,8 +1057,15 @@ header {
 }
 
 .place-now-card {
-    margin-bottom: 16px;
-    padding: 20px;
+    margin-bottom: 14px;
+    padding: 18px;
+
+    background: var(--ago-surface);
+
+    border: 1px solid var(--ago-border);
+    border-radius: var(--ago-radius-lg);
+
+    box-shadow: var(--ago-shadow-card);
 }
 
 .place-now-card-header {
@@ -1081,7 +1074,7 @@ header {
     justify-content: space-between;
     gap: 12px;
 
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .place-now-time {
@@ -1093,18 +1086,16 @@ header {
 }
 
 .place-now-content {
-    margin: 0 0 18px;
+    margin: 0 0 16px;
 
     color: var(--ago-text);
 
     font-size: 15px;
     line-height: 1.6;
-
-    word-break: break-word;
 }
 
 .place-now-footer {
-    padding-top: 14px;
+    padding-top: 12px;
 
     border-top: 1px solid var(--ago-border);
 
@@ -1114,7 +1105,17 @@ header {
 }
 
 .place-empty {
+    padding: 24px;
+
+    background: var(--ago-surface);
+
+    border: 1px dashed var(--ago-border);
+    border-radius: var(--ago-radius-lg);
+
     color: var(--ago-muted);
+
+    text-align: center;
+    font-size: 13px;
 }
 
 /* ========================================
@@ -1595,10 +1596,9 @@ header {
 
     .place-header {
         flex-direction: column;
-
         gap: 16px;
 
-        margin-bottom: 28px;
+        margin-bottom: 30px;
     }
 
     .place-title {
@@ -1611,13 +1611,15 @@ header {
 
     .place-current-card,
     .place-now-card {
-        padding: 18px;
-
-        border-radius: var(--ago-radius-md);
+        padding: 17px;
     }
 
     .place-current-status {
         flex-wrap: wrap;
+    }
+
+    .place-current-content {
+        font-size: 15px;
     }
 
     .place-section-title {

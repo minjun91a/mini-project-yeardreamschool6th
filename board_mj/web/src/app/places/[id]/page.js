@@ -88,15 +88,29 @@ export default function PlaceDetailPage() {
     return (
         <main className="place-page">
             <div className="place-header">
-                <div>
+                <div className="place-info">
+                    <Link href="/now" className="back-button">
+                        ← 목록으로
+                    </Link>
+
                     <h1 className="place-title">{place.name}</h1>
 
-                    <p className="place-category">{CATEGORY_LABEL[place.category] || place.category}</p>
-                    <p className="place-address">{place.address}</p>
+                    <div className="place-meta">
+                        <span className="place-category">
+                            {CATEGORY_LABEL[place.category] || place.category}
+                        </span>
+
+                        <span className="place-address">
+                            {place.address}
+                        </span>
+                    </div>
                 </div>
 
-                <Link href={`/now/write?placeId=${place._id}`} className="place-now-button">
-                    이 장소 NOW 작성
+                <Link
+                    href={`/now/write?placeId=${place._id}`}
+                    className="place-now-button"
+                >
+                    지금 알려주기
                 </Link>
             </div>
 
@@ -111,7 +125,7 @@ export default function PlaceDetailPage() {
                             </strong>
 
                             <span className="place-current-time">
-                                최근 업데이트 {formatRelativeTime(latestNow.createdAt)}
+                                {formatRelativeTime(latestNow.createdAt)}
                             </span>
                         </div>
 
@@ -120,17 +134,17 @@ export default function PlaceDetailPage() {
                         </p>
                     </div>
                 ) : (
-                    <p className="place-empty">아직 등록된 NOW 정보가 없습니다.</p>
+                    <p className="place-empty">아직 등록된 현장 정보가 없습니다.</p>
                 )}
             </section>
 
-            <hr/>
-
             <section className="place-now-section">
-                <h2 className="place-section-title">최근 NOW</h2>
+                <h2 className="place-section-title">최근 현장 정보</h2>
 
                 {items.length === 0 && (
-                    <p>아직 등록된 NOW 정보가 없습니다.</p>
+                    <p className="place-empty">
+                        아직 등록된 현장 정보가 없습니다.
+                    </p>
                 )}
 
                 {items.map((post) => (
