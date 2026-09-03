@@ -36,7 +36,7 @@ export default function Login(){
     }
 
     return (
-        <main style={{padding:24, maxWidth: 800, margin: '0 auto'}}>
+        <main>
             <h1>로그인</h1>
 
             <div>
@@ -58,7 +58,11 @@ export default function Login(){
 
             {error && <p style={{color: 'red'}}>{error}</p>}
 
-            <button onClick={handleSubmit} disabled={loading}>
+            <button
+                className="login-submit"
+                onClick={handleSubmit}
+                disabled={loading}
+            >
                 {loading ? '로그인 중...' : '로그인'}
             </button>
         </main>

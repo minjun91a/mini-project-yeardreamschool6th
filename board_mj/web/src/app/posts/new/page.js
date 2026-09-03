@@ -30,29 +30,41 @@ export default function NewPost() {
     }
 
     return (
-        <main style={{padding: 24, maxWidth: 800, margin: '0 auto'}}>
-            <h1>글쓰기</h1>
+        <main className="post-write-page">
+            <h1 className="post-write-title">
+                글쓰기
+            </h1>
 
-            <div>
+            <div className="post-write-field">
                 <input
+                    className="post-write-input"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="제목"
                 />
             </div>
 
-            <div>
-                <textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="내용"
-                    rows={10}
-                />
+            <div className="post-write-field">
+            <textarea
+                className="post-write-textarea"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="내용"
+                rows={10}
+            />
             </div>
 
-            {error && <p style={{color: 'red'}}>{error}</p>}
+            {error && (
+                <p className="error">
+                    {error}
+                </p>
+            )}
 
-            <button onClick={handleSubmit} disabled={loading}>
+            <button
+                className="post-write-submit"
+                onClick={handleSubmit}
+                disabled={loading}
+            >
                 {loading ? '저장 중...' : '작성'}
             </button>
         </main>

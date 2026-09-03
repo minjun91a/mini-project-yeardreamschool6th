@@ -19,7 +19,9 @@ export default async function PostDetail({params}) {
 
     return (
         <main className="post-detail">
-            <Link href="/" className="muted">← 뒤로</Link>
+            <Link href="/" className="back-button">
+                ← 게시판으로
+            </Link>
 
             <div className="card-head">
                 <div className="avatar">{post.author?.name?.[0] ?? '?'}</div>

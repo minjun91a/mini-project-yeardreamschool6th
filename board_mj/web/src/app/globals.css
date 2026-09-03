@@ -410,6 +410,80 @@ header {
     font-size: 13px;
 }
 
+/* ========================================
+   Pagination
+======================================== */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    margin-top: 28px;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-page,
+.pagination-nav {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 38px;
+
+    border: 1px solid var(--ago-border);
+    border-radius: var(--ago-radius-pill);
+
+    background: var(--ago-surface);
+    color: var(--ago-text);
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            transform 0.15s ease;
+}
+
+.pagination-page {
+    width: 38px;
+}
+
+.pagination-nav {
+    padding: 0 14px;
+}
+
+.pagination-page:hover,
+.pagination-nav:hover {
+    border-color: var(--ago-lime);
+
+    transform: translateY(-1px);
+}
+
+.pagination-page.active {
+    background: var(--ago-lime);
+    border-color: var(--ago-lime);
+
+    font-weight: 800;
+}
+
+.pagination-total {
+    margin: 14px 0 0;
+
+    color: var(--ago-muted);
+
+    text-align: center;
+
+    font-size: 12px;
+}
+
 
 /* ========================================
    7. NOW Feed
@@ -1043,6 +1117,84 @@ header {
     color: var(--ago-muted);
 }
 
+/* ========================================
+   Post Write
+======================================== */
+
+.post-write-page {
+    width: 100%;
+    max-width: 620px;
+
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+}
+
+.post-write-title {
+    margin-bottom: 28px;
+    padding: 0;
+
+    color: var(--ago-text);
+
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.post-write-field {
+    margin-bottom: 16px;
+}
+
+.post-write-input,
+.post-write-textarea {
+    margin: 0;
+
+    background: var(--ago-surface);
+    color: var(--ago-text);
+
+    border: 1px solid var(--ago-border);
+    border-radius: var(--ago-radius-md);
+}
+
+.post-write-input {
+    min-height: 48px;
+}
+
+.post-write-textarea {
+    min-height: 220px;
+
+    padding: 14px;
+
+    line-height: 1.6;
+}
+
+.post-write-input:focus,
+.post-write-textarea:focus {
+    border-color: var(--ago-lime);
+}
+
+.post-write-submit {
+    min-width: 88px;
+    min-height: 44px;
+
+    margin-top: 4px;
+
+    background: var(--ago-lime);
+    color: var(--ago-text);
+
+    border: 0;
+    border-radius: var(--ago-radius-pill);
+
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.post-write-submit:hover {
+    background: var(--ago-lime-hover);
+}
+
+.post-write-submit:disabled {
+    opacity: 0.5;
+}
 
 /* ========================================
    10. Post Detail
@@ -1073,6 +1225,38 @@ header {
     border-top: 0;
 
     color: var(--ago-muted);
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+
+    margin-bottom: 18px;
+    padding: 8px 12px;
+
+    background: var(--ago-surface);
+    color: var(--ago-muted);
+
+    border: 1px solid var(--ago-border);
+    border-radius: var(--ago-radius-pill);
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition:
+            background 0.15s ease,
+            color 0.15s ease,
+            border-color 0.15s ease,
+            transform 0.15s ease;
+}
+
+.back-button:hover {
+    background: var(--ago-surface-soft);
+    color: var(--ago-text);
+
+    border-color: var(--ago-border-strong);
+
+    transform: translateX(-2px);
 }
 
 
@@ -1173,6 +1357,33 @@ header {
     color: var(--ago-text);
 }
 
+/* ========================================
+   Login
+======================================== */
+
+.login-submit {
+    min-width: 88px;
+    min-height: 44px;
+
+    margin-top: 4px;
+
+    background: var(--ago-lime);
+    color: var(--ago-text);
+
+    border: 0;
+    border-radius: var(--ago-radius-pill);
+
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.login-submit:hover {
+    background: var(--ago-lime-hover);
+}
+
+.login-submit:disabled {
+    opacity: 0.5;
+}
 
 /* ========================================
    12. Tablet / Mobile
@@ -1417,6 +1628,25 @@ header {
         font-size: 14px;
     }
 
+    /* Post Write */
+
+    .post-write-page {
+        max-width: none;
+
+        padding: 24px 16px 60px;
+    }
+
+    .post-write-title {
+        font-size: 24px;
+    }
+
+    .post-write-textarea {
+        min-height: 200px;
+    }
+
+    .post-write-submit {
+        width: 100%;
+    }
 
     /* Post Detail */
 

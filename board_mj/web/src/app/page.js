@@ -45,20 +45,46 @@ export default async function Home({searchParams}) {
             )}
 
             {totalPages > 1 && (
-                <nav style={{display: 'flex', gep: 8, marginTop: 20}}>
-                    {page > 1 && <Link href={`/?page=${page - 1}`}>이전</Link>}
-
-                    {Array.from({length: totalPages}, (_, i) => i + 1).map((n) => (
-                        <Link key={n} href={`/?page=${n}`} style={{fontWeight: n === page ? 'bold' : 'normal'}}>
-                            {n}
+                <nav className="pagination">
+                    {page > 1 && (
+                        <Link
+                            href={`/?page=${page - 1}`}
+                            className="pagination-nav"
+                        >
+                            이전
                         </Link>
-                    ))}
+                    )}
 
-                    {page < totalPages && <Link href={`/?page=${page + 1}`}>다음</Link>}
+                    <div className="pagination-pages">
+                        {Array.from({length: totalPages}, (_, i) => i + 1).map((n) => (
+                            <Link
+                                key={n}
+                                href={`/?page=${n}`}
+                                className={
+                                    n === page
+                                        ? 'pagination-page active'
+                                        : 'pagination-page'
+                                }
+                            >
+                                {n}
+                            </Link>
+                        ))}
+                    </div>
+
+                    {page < totalPages && (
+                        <Link
+                            href={`/?page=${page + 1}`}
+                            className="pagination-nav"
+                        >
+                            다음
+                        </Link>
+                    )}
                 </nav>
             )}
 
-            <p>전체 {data.total}건</p>
+            <p className="pagination-total">
+                전체 {data.total}건
+            </p>
         </main>
     );
 }
