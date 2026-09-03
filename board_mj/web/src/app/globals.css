@@ -570,6 +570,15 @@ header {
     transform: translateY(-1px);
 }
 
+.now-write-description {
+    margin: -6px 0 28px;
+
+    color: var(--ago-muted);
+
+    font-size: 14px;
+    line-height: 1.6;
+}
+
 .now-feed {
     display: flex;
     flex-direction: column;

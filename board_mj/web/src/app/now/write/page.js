@@ -142,7 +142,13 @@ export default function NowWritePage() {
 
     return (
         <main className="now-write-page">
-            <h1 className="now-write-title">NOW 작성</h1>
+            <h1 className="now-write-title">
+                지금 알려주기
+            </h1>
+
+            <p className="now-write-description">
+                지금 이곳의 상황을 알려주세요.
+            </p>
 
             {error && (
                 <p>{error}</p>
@@ -263,7 +269,7 @@ export default function NowWritePage() {
                     className="now-write-submit"
                     disabled={submitting}
                 >
-                    {submitting ? '등록 중...' : 'NOW 등록'}
+                    {submitting ? '등록 중...' : '등록하기'}
                 </button>
             </form>
         </main>
