@@ -94,22 +94,17 @@ export default function NowPage() {
     const [placeResults, setPlaceResults] = useState([]);
     const [searchingPlaces, setSearchingPlaces] = useState(false);
 
-    const latestPlaceItems = items.filter((post, index, array) => {
-        if (!post.place?._id) {
-            return true;
-        }
+    const [userLocation, setUserLocation] = useState(null);
+    const [nearbyPlaces, setNearbyPlaces] = useState([]);
+    const [locationLoading, setLocationLoading] = useState(false);
+    const [locationError, setLocationError] = useState('');
 
-        return (
-            array.findIndex(
-                (item) => item.place?._id === post.place._id
-            ) === index
-        );
-    });
+    const [nearbyMode, setNearbyMode] = useState(false);
 
     useEffect(() => {
         const loadNowFeed = async () => {
             try {
-                const data = await apiFetch('/api/posts?kind=now');
+                const data = await apiFetch('/api/places/now/latest');
 
                 setItems(data.items);
             } catch (err) {
@@ -148,6 +143,85 @@ export default function NowPage() {
         return () => clearTimeout(timer);
     }, [placeQuery]);
 
+    function loadCurrentLocation() {
+        if (!navigator.geolocation) {
+            setLocationError('현재 브라우저에서는 위치 정보를 사용할 수 없습니다.');
+            return;
+        }
+
+        setLocationLoading(true);
+        setLocationError('');
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+
+                setUserLocation({
+                    latitude,
+                    longitude
+                });
+
+                try {
+                    const data = await apiFetch(
+                        `/api/places/nearby?longitude=${longitude}&latitude=${latitude}&maxDistance=3000`
+                    );
+
+                    setNearbyPlaces(data.places || []);
+                    setNearbyMode(true);
+                } catch (err) {
+                    setLocationError(err.message);
+                } finally {
+                    setLocationLoading(false);
+                }
+            },
+
+            (error) => {
+                if (error.code === 1) {
+                    setLocationError('위치 권한이 필요합니다.');
+                } else {
+                    setLocationError('현재 위치를 가져오지 못했습니다.');
+                }
+
+                setLocationLoading(false);
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    }
+
+    function getPlaceDistance(placeId) {
+        const place = nearbyPlaces.find(
+            (item) => item._id === placeId
+        );
+
+        return place?.distance ?? null;
+    }
+
+    function formatDistance(distance) {
+        if (distance == null) {
+            return null;
+        }
+
+        if (distance < 1000) {
+            return `${Math.round(distance)}m`;
+        }
+
+        return `${(distance / 1000).toFixed(1)}km`
+    }
+
+    const visibleItems = nearbyMode
+        ? items.filter((post) =>
+            nearbyPlaces.some(
+                (place) => place._id === post.place?._id
+            )
+        )
+        : items;
+
     if (loading) {
         return <main>불러오는 중...</main>;
     }
@@ -185,6 +259,29 @@ export default function NowPage() {
                 </label>
 
                 <div className="now-place-search-input-wrap">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (nearbyMode) {
+                                setNearbyMode(false);
+                                return;
+                            }
+
+                            loadCurrentLocation();
+                        }}
+                        disabled={locationLoading}
+                    >
+                        {locationLoading
+                            ? '위치 확인 중...'
+                            : userLocation
+                                ? '📍 내 위치 사용 중'
+                                : '내 주변 보기'}
+                    </button>
+
+                    {locationError && (
+                        <p>{locationError}</p>
+                    )}
+
                     <input
                         id="now-place-search-input"
                         className="now-place-search-input"
@@ -252,16 +349,30 @@ export default function NowPage() {
                 </section>
             ) : (
                 <>
-                    {items.length === 0 && (
+                    {visibleItems.length === 0 && (
                         <div className="now-empty">
-                            <strong>아직 현장 정보가 없어요.</strong>
-                            <p>가장 먼저 지금 상황을 알려주세요.</p>
+                            <strong>
+                                {nearbyMode
+                                    ? '주변에 최신 현장 정보가 없어요.'
+                                    : '아직 현장 정보가 없어요.'}
+                            </strong>
+                            <p>
+                                {nearbyMode
+                                    ? '3km 이내에 등록된 현장 정보가 없습니다.'
+                                    : '가장 먼저 지금 상황을 알려주세요.'}
+                            </p>
                         </div>
                     )}
 
                     <section className="now-feed">
-                        {latestPlaceItems.map((post) => {
+                        {visibleItems.map((post) => {
                             const freshness = getFreshness(post.createdAt);
+
+                            const distance = post.place?._id
+                                ? getPlaceDistance(post.place._id)
+                                : null;
+
+                            const distanceText = formatDistance(distance);
 
                             return (
                                 <article key={post._id} className="now-card">
@@ -290,6 +401,15 @@ export default function NowPage() {
 
                                         {post.place?.address && (
                                             <p className="now-address">
+                                                {distanceText && (
+                                                    <>
+                                                        <strong className="now-distance">
+                                                            {distanceText}
+                                                        </strong>
+                                                        <span> · </span>
+                                                    </>
+                                                )}
+
                                                 {post.place.address}
                                             </p>
                                         )}

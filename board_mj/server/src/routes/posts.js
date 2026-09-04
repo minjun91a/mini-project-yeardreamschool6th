@@ -6,6 +6,28 @@ const Comment = require('../models/comment');
 const mongoose = require('mongoose');
 const Place = require('../models/place');
 
+function getDistanceMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+
+    const toRad = (value) => value * Math.PI / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+
+    const c = 2 * Math.atan2(
+        Math.sqrt(a),
+        Math.sqrt(1 - a)
+    );
+
+    return R * c;
+}
+
 router.get('/', async (req, res) => {
 
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -61,7 +83,9 @@ router.post('/', auth, async (req, res) => {
         title,
         content,
         placeId,
-        status
+        status,
+        longitude,
+        latitude
     } = req.body;
 
     const allowedKinds = ['board', 'now'];
@@ -109,6 +133,26 @@ router.post('/', auth, async (req, res) => {
             });
         }
 
+        let visitVerified = false;
+
+        if (
+            Number.isFinite(longitude) &&
+            Number.isFinite(latitude) &&
+            place?.location?.coordinates?.length === 2
+        ) {
+            const [placeLongitude, placeLatitude] =
+                place.location.coordinates;
+
+            const distance = getDistanceMeters(
+                latitude,
+                longitude,
+                placeLatitude,
+                placeLongitude
+            );
+
+            visitVerified = distance <= 300;
+        }
+
         const allowedStatuses = ['quiet', 'normal', 'busy'];
 
         if (!status) {
@@ -147,7 +191,7 @@ router.post('/', auth, async (req, res) => {
             author: req.user.sub,
             place: placeId,
             status,
-            visitVerified: false
+            visitVerified
         });
 
         return res.status(201).json({

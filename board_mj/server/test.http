@@ -267,3 +267,17 @@ GET {{host}}/api/places/000000000000000000000000/now
 
 ### 특정 장소 NOW 조회 - 페이지네이션
 GET {{host}}/api/places/6a9672a70aa54f9ad4153f75/now?page=1&limit=1
+
+### 방문 인증 테스트
+POST http://localhost/api/posts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "kind": "now",
+  "placeId": "6a9672a70aa54f9ad4153f75",
+  "status": "quiet",
+  "content": "현장 인증 true 테스트",
+  "longitude": 126.978,
+  "latitude": 37.5665
+}

@@ -83,7 +83,14 @@ export default function PlaceDetailPage() {
         return <main>장소를 찾을 수 없습니다.</main>
     }
 
-    const latestNow = items.length > 0 ? items[0] : null;
+    const latestPost = items.length > 0 ? items[0] : null;
+
+    const latestNow =
+        latestPost &&
+        Date.now() - new Date(latestPost.createdAt).getTime()
+        <= 6 * 60 * 60 * 1000
+            ? latestPost
+            : null;
 
     return (
         <main className="place-page">
@@ -134,7 +141,7 @@ export default function PlaceDetailPage() {
                         </p>
                     </div>
                 ) : (
-                    <p className="place-empty">아직 등록된 현장 정보가 없습니다.</p>
+                    <p className="place-empty">최근 6시간 내 현장 정보가 없습니다.</p>
                 )}
             </section>
 

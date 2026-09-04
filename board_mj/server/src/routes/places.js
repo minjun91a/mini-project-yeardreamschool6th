@@ -67,6 +67,143 @@ router.get('/', async (req, res) => {
     });
 });
 
+router.get('/now/latest', async (req, res) => {
+    const limit = Math.min(
+        50,
+        Math.max(1, parseInt(req.query.limit) || 10)
+    );
+
+    const freshnessLimit = new Date(
+        Date.now() - 6 * 60 * 60 * 1000
+    );
+
+    const latestNowPosts = await Post.aggregate([
+        {
+            $match: {
+                kind: 'now',
+                place: {$ne: null},
+                createdAt: {$gte: freshnessLimit}
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        },
+        {
+            $group: {
+                _id: '$place',
+                post: {$first: '$$ROOT'}
+            }
+        },
+        {
+            $replaceRoot: {
+                newRoot: '$post'
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1
+            }
+        },
+        {
+            $limit: limit
+        }
+    ]);
+
+    await Post.populate(latestNowPosts, [
+        {
+            path: 'author',
+            select: '_id name'
+        },
+        {
+            path: 'place',
+            select: 'name category address'
+        }
+    ]);
+
+    return res.json({
+        success: true,
+        data: {
+            items: latestNowPosts
+        }
+    });
+});
+
+router.get('/nearby', async (req, res) => {
+    const longitude = Number(req.query.longitude);
+    const latitude = Number(req.query.latitude);
+
+    const maxDistance = Math.min(
+        Math.max(Number(req.query.maxDistance) || 3000, 100),
+        10000
+    );
+
+    const limit = Math.min(
+        Math.max(Number(req.query.limit) || 20, 1),
+        50
+    );
+
+    if (
+        !Number.isFinite(longitude) ||
+        !Number.isFinite(latitude)
+    ) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_COORDINATES',
+                message: '경도와 위도가 필요합니다.'
+            }
+        });
+    }
+
+    if (
+        longitude < -180 ||
+        longitude > 180 ||
+        latitude < -90 ||
+        latitude > 90
+    ) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_COORDINATES',
+                message: '좌표 범위가 올바르지 않습니다.'
+            }
+        });
+    }
+
+    const places = await Place.aggregate([
+        {
+            $geoNear: {
+                near: {
+                    type: 'Point',
+                    coordinates: [longitude, latitude]
+                },
+                distanceField: 'distance',
+                maxDistance,
+                spherical: true
+            }
+        },
+        {
+            $limit: limit
+        },
+        {
+            $project: {
+                name: 1,
+                category: 1,
+                address: 1,
+                location: 1,
+                distance: 1
+            }
+        }
+    ]);
+
+    return res.status(200).json({
+        success: true,
+        data: {places}
+    });
+});
+
 router.get('/:id/now', async (req, res) => {
     const {id} = req.params;
 
@@ -104,7 +241,7 @@ router.get('/:id/now', async (req, res) => {
         .sort({createdAt: -1})
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate('author', 'id name')
+        .populate('author', '_id name')
         .populate('place', 'name category address')
         .lean();
 

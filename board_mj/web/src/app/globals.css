@@ -540,6 +540,11 @@ header {
     line-height: 1.5;
 }
 
+.now-distance {
+    color: var(--ago-text);
+    font-weight: 700;
+}
+
 .now-write-button {
     display: inline-flex;
     align-items: center;
