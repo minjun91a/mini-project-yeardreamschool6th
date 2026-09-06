@@ -31,6 +31,11 @@ const schema = new mongoose.Schema({
         default: 'user',
         enum: ['user', 'admin']
     },
+
+    followedPlaces: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Place'
+    }]
 }, {collection: 'users', timestamps: true, id: false});
 
 schema.pre('save', async function() {
