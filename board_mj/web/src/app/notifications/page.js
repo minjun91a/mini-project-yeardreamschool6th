@@ -84,11 +84,16 @@ export default function NotificationsPage() {
     }
 
     return (
-        <main>
-            <h1>알림</h1>
+        <main className="notification-page">
+            <div className="notification-header">
+                <h1>알림</h1>
+                <p>팔로우한 장소의 새로운 NOW를 확인해보세요.</p>
+            </div>
 
             {items.length === 0 ? (
-                <p>아직 알림이 없습니다.</p>
+                <div className="notification-empty">
+                    아직 알림이 없습니다.
+                </div>
             ) : (
                 <section className="notification-list">
                     {items.map((item) => (
@@ -97,29 +102,33 @@ export default function NotificationsPage() {
                             className={`notification-card ${item.isRead ? 'read' : 'unread'}`}
                             onClick={() => handleNotificationClick(item)}
                         >
-                            <div>
-                                <strong>
-                                    {item.place?.name || '장소 정보 없음'}
-                                </strong>
+                            <div className="notification-card-top">
+                                <div>
+                                    <strong className="notification-place">
+                                        {item.place?.name || '장소 정보 없음'}
+                                    </strong>
 
-                                {!item.isRead && (
-                                    <span> · 새 알림</span>
-                                )}
+                                    {!item.isRead && (
+                                        <span className="notification-new">
+                                        NEW
+                                    </span>
+                                    )}
+                                </div>
+
+                                <small className="notification-time">
+                                    {formatRelativeTime(item.createdAt)}
+                                </small>
                             </div>
 
-                            <p>
+                            <p className="notification-message">
                                 팔로우한 장소에 새로운 NOW가 등록됐습니다.
                             </p>
 
                             {item.post?.content && (
-                                <p>
+                                <p className="notification-content">
                                     {item.post.content}
                                 </p>
                             )}
-
-                            <small>
-                                {formatRelativeTime(item.createdAt)}
-                            </small>
                         </article>
                     ))}
                 </section>

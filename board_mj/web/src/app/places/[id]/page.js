@@ -133,130 +133,170 @@ export default function PlaceDetailPage() {
     };
 
     return (
-        <main className="place-page">
-            <div className="place-header">
-                <div className="place-info">
-                    <Link href="/now" className="back-button">
-                        ← 목록으로
-                    </Link>
+        <main className="place-detail-page">
+            <section className="place-detail-shell">
+                <header className="place-detail-header">
+                    <div className="place-detail-top">
+                        <Link href="/now" className="place-detail-back">
+                            ←
+                        </Link>
 
-                    <h1 className="place-title">
-                        {place.name}
-                    </h1>
+                        <div className="place-detail-title-area">
+                            <h1>{place.name}</h1>
+                            <span>{place.address}</span>
+                        </div>
 
-                    <button
-                        type="button"
-                        onClick={handleFollow}
-                        disabled={followLoading}
-                    >
-                        {followLoading ? '처리 중...' : isFollowing ? '팔로잉' : '팔로우'}
-                    </button>
+                        <div className="place-detail-actions">
+                            <button
+                                type="button"
+                                className="place-detail-icon-button"
+                                aria-label="알림"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/>
+                                    <path d="M10 21h4"/>
+                                </svg>
+                            </button>
 
-                    <div className="place-meta">
-                        <span className="place-category">
+                            <button
+                                type="button"
+                                className="place-detail-icon-button"
+                                aria-label="공유"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="18" cy="5" r="2.5"/>
+                                    <circle cx="6" cy="12" r="2.5"/>
+                                    <circle cx="18" cy="19" r="2.5"/>
+                                    <path d="m8.2 10.8 7.6-4.4"/>
+                                    <path d="m8.2 13.2 7.6 4.4"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="place-detail-tags">
+                        {latestNow && (
+                            <span className={`now-status ${latestNow.status}`}>
+                            {STATUS_LABEL[latestNow.status] || latestNow.status}
+                        </span>
+                        )}
+
+                        <span className="place-detail-tag">
                             {CATEGORY_LABEL[place.category] || place.category}
                         </span>
-
-                        <span className="place-address">
-                            {place.address}
-                        </span>
                     </div>
-                </div>
+                </header>
 
-                <Link
-                    href={`/now/write?placeId=${place._id}`}
-                    className="place-now-button"
-                >
-                    지금 알려주기
-                </Link>
-            </div>
+                <section className="place-detail-live">
+                    <div className="place-detail-section-head">
+                        <h2>지금 이 장소에 있는 사람들</h2>
+                    </div>
 
-            <section className="place-current-section">
-                <h2 className="place-section-title">현재 상태</h2>
+                    <div className="place-detail-people">
+                        <div className="place-detail-person active">
+                            <div className="place-detail-avatar">
+                                나
+                            </div>
+                            <span>나</span>
+                        </div>
 
-                {latestNow ? (
-                    <div className="place-current-card">
-                        <div className="place-current-status">
-                            <strong className={`now-status ${latestNow.status}`}>
-                                {STATUS_LABEL[latestNow.status] || latestNow.status}
-                            </strong>
+                        <div className="place-detail-person">
+                            <div className="place-detail-avatar">
+                                ?
+                            </div>
+                            <span>현장</span>
+                        </div>
+                    </div>
+                </section>
 
-                            {latestNow.visitVerified && (
-                                <span className="now-verified">
-                                    현장 인증
-                                </span>
+                <section className="place-detail-feed">
+                    {items.length === 0 && (
+                        <div className="place-detail-empty">
+                            아직 등록된 현장 정보가 없습니다.
+                        </div>
+                    )}
+
+                    {items.map((post) => (
+                        <article
+                            key={post._id}
+                            className="place-detail-post"
+                        >
+                            <header className="place-detail-post-head">
+                                <div className="place-detail-author">
+                                    <div className="place-detail-author-avatar">
+                                        {post.author?.name?.[0] || '?'}
+                                    </div>
+
+                                    <div className="place-detail-author-info">
+                                        <div className="place-detail-author-line">
+                                            <strong>
+                                                {post.author?.name || '알 수 없음'}
+                                            </strong>
+
+                                            <span>
+                                                · {post.visitVerified ? '현장' : 'NOW'}
+                                            </span>
+                                        </div>
+
+                                        <small>
+                                            {formatRelativeTime(post.createdAt)}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    className="place-detail-more"
+                                    aria-label="더보기"
+                                >
+                                    ···
+                                </button>
+                            </header>
+
+                            <p className="place-detail-post-content">
+                                {post.content}
+                            </p>
+
+                            {post.imageUrl && (
+                                <div className="place-detail-post-image">
+                                    <img
+                                        src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrl}`}
+                                        alt={`${place.name} 현장 사진`}
+                                    />
+                                </div>
                             )}
 
-                            <span className="place-current-time">
-                                {formatRelativeTime(latestNow.createdAt)}
-                            </span>
-                        </div>
-
-                        <p className="place-current-content">
-                            {latestNow.content}
-                        </p>
-
-                        {latestNow.imageUrl && (
-                            <div className="place-now-image">
-                                <img
-                                    src={`${process.env.NEXT_PUBLIC_API_URL}${latestNow.imageUrl}`}
-                                    alt={`${place.name} 현장 사진`}
-                                />
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <p className="place-empty">최근 6시간 내 현장 정보가 없습니다.</p>
-                )}
-            </section>
-
-            <section className="place-now-section">
-                <h2 className="place-section-title">최근 현장 정보</h2>
-
-                {items.length === 0 && (
-                    <p className="place-empty">
-                        아직 등록된 현장 정보가 없습니다.
-                    </p>
-                )}
-
-                {items.map((post) => (
-                    <article key={post._id} className="place-now-card">
-                        <div className="place-now-card-header">
-                            <div className="place-now-card-status">
-                                <strong className={`now-status ${post.status}`}>
-                                    {STATUS_LABEL[post.status] || post.status}
-                                </strong>
-
-                                {post.visitVerified && (
-                                    <span className="now-verified">
-                                        현장 인증
+                            <footer className="place-detail-post-footer">
+                                <div className="place-detail-post-actions">
+                                    <span className="place-detail-action active">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
+                                            <path d="M5 20a7 7 0 0 1 14 0"/>
+                                        </svg>
+                                        현장에 있어요
                                     </span>
-                                )}
-                            </div>
 
-                            <span className="place-now-time">
-                                {formatRelativeTime(post.createdAt)}
-                            </span>
-                        </div>
+                                    <span className="place-detail-action">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
+                                        </svg>
+                                        댓글
+                                    </span>
+                                </div>
 
-                        <p className="place-now-content">
-                            {post.content}
-                        </p>
-
-                        {post.imageUrl && (
-                            <div className="place-now-image">
-                                <img
-                                    src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrl}`}
-                                    alt={`${place.name} 현장 사진`}
-                                />
-                            </div>
-                        )}
-
-                        <footer className="place-now-footer">
-                            {post.author?.name || '알 수 없음'}
-                        </footer>
-                    </article>
-                ))}
+                                <button
+                                    type="button"
+                                    className="place-detail-bookmark"
+                                    aria-label="북마크"
+                                >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M6 3h12v18l-6-4-6 4V3Z"/>
+                                    </svg>
+                                </button>
+                            </footer>
+                        </article>
+                    ))}
+                </section>
             </section>
         </main>
     );

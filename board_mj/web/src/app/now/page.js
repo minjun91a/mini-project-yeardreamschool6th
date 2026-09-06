@@ -231,36 +231,16 @@ export default function NowPage() {
     }
 
     return (
-        <main className="now-page">
-            <header className="now-header">
-                <div>
-                    <p className="now-eyebrow">ago.</p>
+        <main className="home-now-page">
+            <section className="home-now-shell">
+                <header className="home-now-header">
+                    <div className="home-now-logo">
+                        ago<span className="ago-logo-dot">.</span>
+                    </div>
 
-                    <h1 className="now-title">
-                        가고 싶은 곳의 <span>지금.</span>
-                    </h1>
-
-                    <p className="now-subtitle">
-                        방금 다녀온 사람들이 알려주는 가장 최신의 현장 정보
-                    </p>
-                </div>
-
-                <Link href="/now/write" className="now-write-button">
-                    지금 알려주기
-                </Link>
-            </header>
-
-            <section className="now-place-search">
-                <label
-                    htmlFor="now-place-search-input"
-                    className="now-place-search-label"
-                >
-                    어디로 가시나요?
-                </label>
-
-                <div className="now-place-search-input-wrap">
                     <button
                         type="button"
+                        className="home-now-location"
                         onClick={() => {
                             if (nearbyMode) {
                                 setNearbyMode(false);
@@ -271,21 +251,44 @@ export default function NowPage() {
                         }}
                         disabled={locationLoading}
                     >
-                        {locationLoading
-                            ? '위치 확인 중...'
-                            : userLocation
-                                ? '📍 내 위치 사용 중'
-                                : '내 주변 보기'}
+                        <span className="home-now-location-arrow">‹</span>
+
+                        <span className="home-now-location-label">
+                            내 위치
+                        </span>
+
+                        <span className="home-now-location-divider">
+                            ·
+                        </span>
+
+                        <strong className="home-now-location-area">
+                            {locationLoading
+                                ? '확인 중'
+                                : nearbyMode
+                                    ? '내 주변'
+                                    : '주변'}
+                        </strong>
+
+                        <span className="home-now-location-mini-pin">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 21s6-5.3 6-11a6 6 0 1 0-12 0c0 5.7 6 11 6 11Z"/>
+                                <circle cx="12" cy="10" r="2.2"/>
+                            </svg>
+                        </span>
                     </button>
+                </header>
 
-                    {locationError && (
-                        <p>{locationError}</p>
-                    )}
+                <div className="home-now-categories">
+                    <button className="active">전체</button>
+                    <button>카페</button>
+                    <button>맛집</button>
+                    <button>편의점</button>
+                    <button>주차</button>
+                    <button>문화</button>
+                </div>
 
+                <section className="home-now-search">
                     <input
-                        id="now-place-search-input"
-                        className="now-place-search-input"
-                        type="text"
                         value={placeQuery}
                         onChange={(e) => setPlaceQuery(e.target.value)}
                         placeholder="장소 이름이나 주소를 검색하세요"
@@ -294,77 +297,68 @@ export default function NowPage() {
                     {placeQuery && (
                         <button
                             type="button"
-                            className="now-place-search-clear"
                             onClick={() => setPlaceQuery('')}
                             aria-label="검색어 지우기"
                         >
                             ×
                         </button>
                     )}
-                </div>
-            </section>
-
-            {placeQuery.trim() ? (
-                <section className="now-search-mode">
-                    <h2 className="now-section-title">검색 결과</h2>
-
-                    {searchingPlaces && (
-                        <p className="now-place-search-message">
-                            검색 중...
-                        </p>
-                    )}
-
-                    {!searchingPlaces && placeResults.length === 0 && (
-                        <div className="now-empty">
-                            <strong>검색 결과가 없어요.</strong>
-                            <p>다른 장소 이름이나 주소로 검색해보세요.</p>
-                        </div>
-                    )}
-
-                    {!searchingPlaces && placeResults.length > 0 && (
-                        <div className="now-place-search-results">
-                            {placeResults.map((place) => (
-                                <Link
-                                    key={place._id}
-                                    href={`/places/${place._id}`}
-                                    className="now-place-search-result"
-                                >
-                                    <div>
-                                        <strong>{place.name}</strong>
-
-                                        <span>
-                                            {CATEGORY_LABEL[place.category] || place.category}
-                                            {' · '}
-                                            {place.address}
-                                         </span>
-                                    </div>
-
-                                    <span className="now-place-search-arrow">
-                                        →
-                                    </span>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
                 </section>
-            ) : (
-                <>
-                    {visibleItems.length === 0 && (
-                        <div className="now-empty">
-                            <strong>
+
+                {locationError && (
+                    <p className="home-now-error">
+                        {locationError}
+                    </p>
+                )}
+
+                {placeQuery.trim() ? (
+                    <section className="home-now-search-results">
+                        {searchingPlaces && (
+                            <p className="home-now-state">
+                                검색 중...
+                            </p>
+                        )}
+
+                        {!searchingPlaces && placeResults.length === 0 && (
+                            <div className="home-now-empty">
+                                검색 결과가 없어요.
+                            </div>
+                        )}
+
+                        {!searchingPlaces && placeResults.length > 0 && (
+                            <>
+                                {placeResults.map((place) => (
+                                    <Link
+                                        key={place._id}
+                                        href={`/places/${place._id}`}
+                                        className="home-now-search-card"
+                                    >
+                                        <div>
+                                            <strong>{place.name}</strong>
+
+                                            <span>
+                                            {CATEGORY_LABEL[place.category] || place.category}
+                                                {' · '}
+                                                {place.address}
+                                        </span>
+                                        </div>
+
+                                        <span>›</span>
+                                    </Link>
+                                ))}
+                            </>
+                        )}
+                    </section>
+                ) : (
+                    <section className="home-now-feed">
+                        {visibleItems.length === 0 && (
+                            <div className="home-now-empty">
                                 {nearbyMode
                                     ? '주변에 최신 현장 정보가 없어요.'
                                     : '아직 현장 정보가 없어요.'}
-                            </strong>
-                            <p>
-                                {nearbyMode
-                                    ? '3km 이내에 등록된 현장 정보가 없습니다.'
-                                    : '가장 먼저 지금 상황을 알려주세요.'}
-                            </p>
-                        </div>
-                    )}
+                            </div>
+                        )}
 
-                    <section className="now-feed">
                         {visibleItems.map((post) => {
                             const freshness = getFreshness(post.createdAt);
 
@@ -375,72 +369,50 @@ export default function NowPage() {
                             const distanceText = formatDistance(distance);
 
                             return (
-                                <article key={post._id} className="now-card">
-                                    <div className="now-place-area">
-                                        {post.place ? (
-                                            <Link
-                                                href={`/places/${post.place._id}`}
-                                                className="now-place-link"
-                                            >
-                                                <h2 className="now-place-name">
-                                                    {post.place.name}
-                                                </h2>
+                                <article
+                                    key={post._id}
+                                    className="home-now-card"
+                                >
+                                    <div className="home-now-card-head">
+                                        <div className="home-now-place">
+                                            <span className="home-now-pin">●</span>
+
+                                            <Link href={`/places/${post.place?._id}`}>
+                                                <strong>
+                                                    {post.place?.name || '장소 정보 없음'}
+                                                </strong>
                                             </Link>
-                                        ) : (
-                                            <h2 className="now-place-name">
-                                                장소 정보 없음
-                                            </h2>
-                                        )}
 
-                                        {post.place?.category && (
-                                            <span className="now-category">
-                                                {CATEGORY_LABEL[post.place.category] ||
-                                                    post.place.category}
-                                            </span>
-                                        )}
+                                            {distanceText && (
+                                                <small>{distanceText}</small>
+                                            )}
+                                        </div>
 
-                                        {post.place?.address && (
-                                            <p className="now-address">
-                                                {distanceText && (
-                                                    <>
-                                                        <strong className="now-distance">
-                                                            {distanceText}
-                                                        </strong>
-                                                        <span> · </span>
-                                                    </>
-                                                )}
-
-                                                {post.place.address}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="now-status-row">
-                                        <strong
-                                            className={`now-status ${post.status}`}
-                                        >
-                                            {STATUS_LABEL[post.status] || post.status}
-                                        </strong>
-
-                                        {post.visitVerified && (
-                                            <span className="now-verified">
-                                                현장 인증
-                                            </span>
-                                        )}
-
-                                        <span
-                                            className={`now-freshness ${freshness.type}`}
-                                        >
+                                        <span className={`home-now-time ${freshness.type}`}>
                                             {formatRelativeTime(post.createdAt)}
                                         </span>
                                     </div>
 
-                                    <p className="now-content">
-                                        {post.content}
-                                    </p>
+                                    <div className="home-now-tags">
+                                        <span className={`now-status ${post.status}`}>
+                                            {STATUS_LABEL[post.status] || post.status}
+                                        </span>
+
+                                        {post.visitVerified && (
+                                            <span className="home-now-tag">
+                                                현장 인증
+                                            </span>
+                                        )}
+
+                                        {post.place?.category && (
+                                            <span className="home-now-tag">
+                                                {CATEGORY_LABEL[post.place.category] || post.place.category}
+                                            </span>
+                                        )}
+                                    </div>
 
                                     {post.imageUrl && (
-                                        <div className="now-card-image">
+                                        <div className="home-now-image">
                                             <img
                                                 src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrl}`}
                                                 alt={`${post.place?.name || '장소'} 현장 사진`}
@@ -448,19 +420,45 @@ export default function NowPage() {
                                         </div>
                                     )}
 
-                                    <footer className="now-footer">
-                                        <span>
-                                            {post.author?.name || '알 수 없음'}
-                                        </span>
+                                    <p className="home-now-content">
+                                        {post.content}
+                                    </p>
 
-                                        <span>현장 제보</span>
+                                    <footer className="home-now-card-footer">
+                                        <div className="home-now-card-actions">
+                                            <span className="home-now-action">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
+                                                    <path d="M5 20a7 7 0 0 1 14 0"/>
+                                                </svg>
+
+                                                현장에 있어요
+                                            </span>
+
+                                            <span className="home-now-action">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path
+                                                        d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
+                                                </svg>
+
+                                                댓글
+                                            </span>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            className="home-now-more"
+                                            aria-label="더보기"
+                                        >
+                                            ···
+                                        </button>
                                     </footer>
                                 </article>
                             );
                         })}
                     </section>
-                </>
-            )}
+                )}
+            </section>
         </main>
     );
 }

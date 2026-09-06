@@ -47,35 +47,15 @@ export default function Header() {
 
     return (
         <header className="site-header">
-            <Link href="/" className="logo">
+            <Link href="/now" className="logo">
                 ago<span className="ago-logo-dot">.</span>
             </Link>
 
-            <nav className="header-nav">
-                <Link href="/now" className="muted">
-                    NOW
+            {!me && (
+                <Link href="/login" className="header-login-link">
+                    로그인
                 </Link>
-
-                {me ? (
-                    <>
-                        <Link href="/posts/new" className="muted">글쓰기</Link>
-                        <Link href="/notifications" className="muted">
-                            알림
-                            {unreadCount > 0 && (
-                                <span className="notification-badge">
-                                    {unreadCount}
-                                </span>
-                            )}
-                        </Link>
-                        <span className="muted header-user">{me.name}</span>
-                        <button className="ghost header-logout" onClick={handleLogout}>로그아웃</button>
-                    </>
-                ) : (
-                    <Link href="/login">
-                        <button className="ghost header-login">로그인</button>
-                    </Link>
-                )}
-            </nav>
+            )}
         </header>
     );
 }

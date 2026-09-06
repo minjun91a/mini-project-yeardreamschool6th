@@ -36,35 +36,49 @@ export default function Login(){
     }
 
     return (
-        <main>
-            <h1>로그인</h1>
+        <main className="login-page">
+            <section className="login-card">
+                <div className="login-brand">
+                    ago<span className="ago-logo-dot">.</span>
+                </div>
 
-            <div>
-                <input
-                    value={id}
-                    onChange={(e) => setId(e.target.value)}
-                    placeholder="아이디"
-                />
-            </div>
+                <h1 className="login-title">로그인</h1>
 
-            <div>
-                <input
-                    type="password"
-                    value={pw}
-                    onChange={(e) => setPw(e.target.value)}
-                    placeholder="비밀번호"
-                />
-            </div>
+                <p className="login-description">
+                    가고 싶은 곳의 지금을 확인하세요.
+                </p>
 
-            {error && <p style={{color: 'red'}}>{error}</p>}
+                <div className="login-form">
+                    <input
+                        className="login-input"
+                        value={id}
+                        onChange={(e) => setId(e.target.value)}
+                        placeholder="아이디"
+                    />
 
-            <button
-                className="login-submit"
-                onClick={handleSubmit}
-                disabled={loading}
-            >
-                {loading ? '로그인 중...' : '로그인'}
-            </button>
+                    <input
+                        className="login-input"
+                        type="password"
+                        value={pw}
+                        onChange={(e) => setPw(e.target.value)}
+                        placeholder="비밀번호"
+                    />
+
+                    {error && (
+                        <p className="login-error">
+                            {error}
+                        </p>
+                    )}
+
+                    <button
+                        className="login-submit"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                    >
+                        {loading ? '로그인 중...' : '로그인'}
+                    </button>
+                </div>
+            </section>
         </main>
     );
 }

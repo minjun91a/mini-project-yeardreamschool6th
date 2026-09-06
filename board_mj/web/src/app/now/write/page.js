@@ -209,89 +209,138 @@ export default function NowWritePage() {
 
     return (
         <main className="now-write-page">
-            <h1 className="now-write-title">
-                지금 알려주기
-            </h1>
-
-            <p className="now-write-description">
-                지금 이곳의 상황을 알려주세요.
-            </p>
-
-            {error && (
-                <p>{error}</p>
-            )}
-
-            <form onSubmit={handleSubmit}>
-                <div className="now-write-field">
-                    <label
-                        htmlFor="place-search"
-                        className="now-write-label"
+            <form
+                className="now-write-compose"
+                onSubmit={handleSubmit}
+            >
+                <header className="now-write-topbar">
+                    <button
+                        type="button"
+                        className="now-write-cancel"
+                        onClick={() => router.back()}
                     >
-                        장소
+                        취소
+                    </button>
+
+                    <h1 className="now-write-topbar-title">
+                        글 작성
+                    </h1>
+
+                    <button
+                        type="submit"
+                        className="now-write-next"
+                        disabled={submitting}
+                    >
+                        {submitting ? '등록 중...' : '등록'}
+                    </button>
+                </header>
+
+                {error && (
+                    <p className="now-write-error">
+                        {error}
+                    </p>
+                )}
+
+                <section className="now-write-place-section">
+                    {!selectedPlace ? (
+                        <>
+                            <input
+                                id="place-search"
+                                className="now-write-place-search"
+                                type="text"
+                                value={placeQuery}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+
+                                    setPlaceQuery(value);
+                                    setSelectedPlace(null);
+                                    setPlaceId('');
+                                }}
+                                placeholder="장소 이름이나 주소를 검색하세요"
+                                disabled={loading}
+                            />
+
+                            {searchingPlaces && (
+                                <p className="now-write-search-message">
+                                    장소 검색 중...
+                                </p>
+                            )}
+
+                            {placeResults.length > 0 && (
+                                <div className="place-search-results">
+                                    {placeResults.map((place) => (
+                                        <button
+                                            key={place._id}
+                                            type="button"
+                                            className="place-search-item"
+                                            onClick={() => {
+                                                setSelectedPlace(place);
+                                                setPlaceId(place._id);
+                                                setPlaceQuery(place.name);
+                                                setPlaceResults([]);
+                                            }}
+                                        >
+                                            <strong>{place.name}</strong>
+                                            <span>{place.address}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <button
+                            type="button"
+                            className="now-write-selected-place"
+                            onClick={() => {
+                                setSelectedPlace(null);
+                                setPlaceId('');
+                            }}
+                        >
+                        <span className="now-write-place-pin">
+                            ●
+                        </span>
+
+                            <span className="now-write-place-info">
+                            <strong>{selectedPlace.name}</strong>
+                            <small>{selectedPlace.address}</small>
+                        </span>
+
+                            <span className="now-write-place-change">
+                            변경
+                        </span>
+                        </button>
+                    )}
+                </section>
+
+                <section className="now-write-content-section">
+                    <label
+                        htmlFor="content"
+                        className="now-write-question"
+                    >
+                        지금 이 장소에서 무슨 일이
+                        <br />
+                        일어나고 있나요?
                     </label>
 
-                    <input
-                        id="place-search"
-                        className="now-write-search"
-                        type="text"
-                        value={placeQuery}
-                        onChange={(e) => {
-                            const value = e.target.value;
-
-                            setPlaceQuery(value);
-
-                            setSelectedPlace(null);
-                            setPlaceId('');
-                        }}
-
-                        placeholder="장소 이름이나 주소를 검색하세요"
-                        disabled={loading}
+                    <textarea
+                        id="content"
+                        className="now-write-compose-textarea"
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder="지금 상황을 알려주세요."
+                        maxLength={1000}
+                        spellCheck={false}
                     />
 
-                    {searchingPlaces && (
-                        <p>장소 검색 중...</p>
-                    )}
+                    <span className="now-write-count">
+                    {content.length}/1000
+                </span>
+                </section>
 
-                    {placeResults.length > 0 && (
-                        <div className="place-search-results">
-                            {placeResults.map((place) => (
-                                <button
-                                    key={place._id}
-                                    type="button"
-                                    className="place-search-item"
-                                    onClick={() => {
-                                        setSelectedPlace(place);
-                                        setPlaceId(place._id);
-
-                                        setPlaceQuery(place.name);
-                                        setPlaceResults([]);
-                                    }}
-                                >
-                                    <strong>{place.name}</strong>
-
-                                    <span>
-                                        {place.address}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {selectedPlace && (
-                        <div className="selected-place">
-                            <strong className="selected-place-name">
-                                {selectedPlace.name}
-                            </strong>
-
-                            <span className="selected-place-address">
-                                {selectedPlace.address}
-                            </span>
-                        </div>
-                    )}
-                </div>
-
-                <div className="now-write-field">
-                    <p className="now-write-label">현재 상태</p>
+                <section className="now-write-status-section">
+                    <p className="now-write-status-title">
+                        현재 상태
+                    </p>
 
                     <div className="now-status-options">
                         {STATUS_OPTIONS.map((option) => (
@@ -311,37 +360,19 @@ export default function NowWritePage() {
                             </label>
                         ))}
                     </div>
-                </div>
+                </section>
 
-                <div className="now-write-field">
-                    <label
-                        htmlFor="content"
-                        className="now-write-label"
-                    >
-                        현장 한마디
+                <section className="now-write-media-section">
+                    <label className="now-write-image-button">
+                        <span>▧</span>
+                        사진 / 동영상
+
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                        />
                     </label>
-
-                    <textarea
-                        id="content"
-                        className="now-write-textarea"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="지금 상황을 알려주세요."
-                        maxLength={1000}
-                        spellCheck={false}
-                    />
-                </div>
-
-                <div className="now-write-image">
-                    <label className="now-write-image-label">
-                        현장 사진
-                    </label>
-
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                    />
 
                     {imagePreview && (
                         <div className="now-write-image-preview">
@@ -351,15 +382,7 @@ export default function NowWritePage() {
                             />
                         </div>
                     )}
-                </div>
-
-                <button
-                    type="submit"
-                    className="now-write-submit"
-                    disabled={submitting}
-                >
-                    {submitting ? '등록 중...' : '등록하기'}
-                </button>
+                </section>
             </form>
         </main>
     );
