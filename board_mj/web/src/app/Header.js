@@ -3,11 +3,32 @@
 import {useState, useEffect} from 'react';
 import {usePathname, useRouter} from 'next/navigation';
 import Link from 'next/link';
+import {apiFetch} from "@/lib/api";
 
 export default function Header() {
-    const [me, setMe] = useState(null);
     const router = useRouter();
     const pathname = usePathname();
+
+    const [me, setMe] = useState(null);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        if (!me) {
+            setUnreadCount(0);
+            return;
+        }
+
+        async function loadUnreadCount() {
+            try {
+                const data = await apiFetch('/api/notifications/unread-count');
+                setUnreadCount(data.count);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        loadUnreadCount();
+    }, [me, pathname]);
 
     useEffect(() => {
         const raw = localStorage.getItem('user');
@@ -37,6 +58,14 @@ export default function Header() {
                 {me ? (
                     <>
                         <Link href="/posts/new" className="muted">글쓰기</Link>
+                        <Link href="/notifications" className="muted">
+                            알림
+                            {unreadCount > 0 && (
+                                <span className="notification-badge">
+                                    {unreadCount}
+                                </span>
+                            )}
+                        </Link>
                         <span className="muted header-user">{me.name}</span>
                         <button className="ghost header-logout" onClick={handleLogout}>로그아웃</button>
                     </>
