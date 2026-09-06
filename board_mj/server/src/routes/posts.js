@@ -6,6 +6,8 @@ const Comment = require('../models/comment');
 const mongoose = require('mongoose');
 const Place = require('../models/place');
 const upload = require('../middlewares/upload');
+const User = require('../models/user');
+const Notification = require('../models/notification');
 
 function uploadSingleImage(req, res, next) {
     upload.single('image')(req, res, (err) => {
@@ -230,6 +232,22 @@ router.post(
                 visitVerified,
                 imageUrl
             });
+
+            const followers = await User.find({
+                followedPlaces: placeId,
+                _id: {$ne: req.user.sub}
+            }).select('_id');
+
+            if (followers.length > 0) {
+                const notifications = followers.map((user) => ({
+                    user: user._id,
+                    type: 'place_now',
+                    place: placeId,
+                    post: post._id
+                }));
+
+                await Notification.insertMany(notifications);
+            }
 
             return res.status(201).json({
                 success: true,

@@ -25,6 +25,7 @@ app.use('/api/posts', require('./routes/posts'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/places', require('./routes/places'));
+app.use('/api/notifications', require('./routes/notifications'));
 app.use('/*path', (req, res) => {
     return res.status(404).json({
         success: false,
