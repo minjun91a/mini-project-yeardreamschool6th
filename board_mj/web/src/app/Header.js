@@ -23,7 +23,8 @@ export default function Header() {
                 const data = await apiFetch('/api/notifications/unread-count');
                 setUnreadCount(data.count);
             } catch (err) {
-                console.error(err);
+                console.warn('알림 개수 조회 실패:', err.message);
+                setUnreadCount(0);
             }
         }
 

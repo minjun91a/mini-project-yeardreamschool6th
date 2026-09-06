@@ -95,6 +95,7 @@ export default function NotificationsPage() {
                         <article
                             key={item._id}
                             className={`notification-card ${item.isRead ? 'read' : 'unread'}`}
+                            onClick={() => handleNotificationClick(item)}
                         >
                             <div>
                                 <strong>
