@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Post = require('../models/post');
 const Place = require('../models/place');
 const auth = require('../middlewares/auth');
+const User = require('../models/user');
 
 const escapeRegex = (text) => {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -250,6 +251,131 @@ router.get('/:id/now', async (req, res) => {
     return res.json({
         success: true,
         data: {items, page, limit, total}
+    });
+});
+
+router.post('/:id/follow', auth, async (req, res) => {
+    const {id} = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_ID',
+                message: '올바르지 않은 장소 ID입니다.'
+            }
+        });
+    }
+
+    const place = await Place.findById(id);
+
+    if (!place) {
+        return res.status(404).json({
+            success: false,
+            error: {
+                code: 'PLACE_NOT_FOUND',
+                message: '장소를 찾을 수 없습니다.'
+            }
+        });
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user.sub,
+        {
+            $addToSet: {
+                followedPlaces: id
+            }
+        },
+        {
+            new: true
+        }
+    ).populate('followedPlaces', 'name category address');
+
+    return res.status(200).json({
+        success: true,
+        data : {
+            followedPlaces: user.followedPlaces
+        }
+    });
+});
+
+router.delete('/:id/follow', auth, async (req, res) => {
+    const {id} = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_ID',
+                message: '올바르지 않은 장소 ID입니다.'
+            }
+        });
+    }
+
+    const user = await User.findById(req.user.sub);
+
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            error: {
+                code: 'USER_NOT_FOUND',
+                message: '사용자를 찾을 수 없습니다.'
+            }
+        });
+    }
+
+    const isFollowing = user.followedPlaces.some(
+        placeId => placeId.toString() === id
+    );
+
+    if (!isFollowing) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'NOT_FOLLOWING',
+                message: '팔로우 중인 장소가 아닙니다.'
+            }
+        });
+    }
+
+    user.followedPlaces.pull(id);
+    await user.save();
+
+    await user.populate(
+        'followedPlaces',
+        'name category address'
+    );
+
+    return res.status(200).json({
+        success: true,
+        data: {
+            followedPlaces: user.followedPlaces
+        }
+    });
+});
+
+router.get('/followed/me', auth, async (req, res) => {
+    const user = await User.findById(req.user.sub)
+        .populate(
+            'followedPlaces',
+            'name category address location'
+        );
+
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            error: {
+                code: 'USER_NOT_FOUND',
+                message: '사용자를 찾을 수 없습니다.'
+            }
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        data: {
+            followedPlaces: user.followedPlaces
+        }
     });
 });
 

@@ -643,14 +643,19 @@ header {
 .now-card-image {
     margin-top: 14px;
     overflow: hidden;
-    border-radius: 16px;
+
+    border-radius: 18px;
     border: 1px solid var(--ago-border);
+
+    background: #f3f3ec;
 }
 
 .now-card-image img {
     display: block;
+
     width: 100%;
-    max-height: 420px;
+    aspect-ratio: 16 / 10;
+
     object-fit: cover;
 }
 
@@ -1237,14 +1242,19 @@ header {
 .place-now-image {
     margin-top: 14px;
     overflow: hidden;
-    border-radius: 16px;
+
+    border-radius: 18px;
     border: 1px solid var(--ago-border);
+
+    background: #f3f3ec;
 }
 
 .place-now-image img {
     display: block;
+
     width: 100%;
-    max-height: 420px;
+    aspect-ratio: 16 / 10;
+
     object-fit: cover;
 }
 
@@ -2057,5 +2067,16 @@ header {
     .now-status-option {
         padding-left: 4px;
         padding-right: 4px;
+    }
+}
+
+/* ========================================
+   14. Image Mobile
+======================================== */
+
+@media (max-width: 768px) {
+    .now-card-image img,
+    .place-now-image img {
+        aspect-ratio: 4 / 3;
     }
 }

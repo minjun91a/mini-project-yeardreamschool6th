@@ -7,6 +7,32 @@ const mongoose = require('mongoose');
 const Place = require('../models/place');
 const upload = require('../middlewares/upload');
 
+function uploadSingleImage(req, res, next) {
+    upload.single('image')(req, res, (err) => {
+        if (err) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({
+                    success: false,
+                    error: {
+                        code: 'IMAGE_TOO_LARGE',
+                        message: '이미지는 5MB 이하만 업로드할 수 있습니다.'
+                    }
+                });
+            }
+
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'INVALID_IMAGE',
+                    message: err.message || '이미지 업로드에 실패했습니다.'
+                }
+            });
+        }
+
+        return next();
+    });
+}
+
 function getDistanceMeters(lat1, lon1, lat2, lon2) {
     const R = 6371000;
 
@@ -80,7 +106,7 @@ router.get('/:id', async (req, res) => {
 router.post(
     '/',
     auth,
-    upload.single('image'),
+    uploadSingleImage,
     async (req, res) => {
         const kind = req.body.kind || 'board';
 
