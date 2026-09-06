@@ -45,6 +45,9 @@ export default function PlaceDetailPage() {
     const params = useParams();
     const id = params.id;
 
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
+
     const [place, setPlace] = useState(null);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -54,11 +57,22 @@ export default function PlaceDetailPage() {
         const loadPlace = async () => {
             try {
                 const placeData = await apiFetch(`/api/places/${id}`);
-
                 const nowData = await apiFetch(`/api/places/${id}/now`);
 
                 setPlace(placeData.place);
                 setItems(nowData.items);
+
+                const token = localStorage.getItem('token');
+
+                if (token) {
+                    const followData = await  apiFetch('/api/places/followed/me');
+
+                    const following = followData.followedPlaces.some(
+                        followedPlace => followedPlace._id === id
+                    );
+
+                    setIsFollowing(following);
+                }
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -92,6 +106,32 @@ export default function PlaceDetailPage() {
             ? latestPost
             : null;
 
+    const handleFollow = async () => {
+        if (followLoading) return;
+
+        try {
+            setFollowLoading(true);
+
+            if (isFollowing) {
+                await apiFetch(`/api/places/${id}/follow`, {
+                    method: 'DELETE'
+                });
+
+                setIsFollowing(false);
+            } else {
+                await apiFetch(`/api/places/${id}/follow`, {
+                    method: 'POST'
+                });
+
+                setIsFollowing(true);
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setFollowLoading(false);
+        }
+    };
+
     return (
         <main className="place-page">
             <div className="place-header">
@@ -100,7 +140,17 @@ export default function PlaceDetailPage() {
                         ← 목록으로
                     </Link>
 
-                    <h1 className="place-title">{place.name}</h1>
+                    <h1 className="place-title">
+                        {place.name}
+                    </h1>
+
+                    <button
+                        type="button"
+                        onClick={handleFollow}
+                        disabled={followLoading}
+                    >
+                        {followLoading ? '처리 중...' : isFollowing ? '팔로잉' : '팔로우'}
+                    </button>
 
                     <div className="place-meta">
                         <span className="place-category">
