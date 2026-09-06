@@ -23,6 +23,9 @@ export default function NowWritePage() {
     const [status, setStatus] = useState('');
     const [content, setContent] = useState('');
 
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState('');
+
     const [loading, setLoading] = useState(true);
     const [searchingPlaces, setSearchingPlaces] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -99,6 +102,32 @@ export default function NowWritePage() {
         };
     }, [placeQuery, selectedPlace]);
 
+    const handleImageChange = (event) => {
+        const file = event.target.files?.[0];
+
+        if (!file) {
+            setImageFile(null);
+            setImagePreview('');
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            setError('이미지 파일만 선택할 수 있습니다.');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setError('이미지는 5MB 이하만 업로드할 수 있습니다.');
+            return;
+        }
+
+        setError('');
+        setImageFile(file);
+
+        const previewUrl = URL.createObjectURL(file);
+        setImagePreview(previewUrl);
+    }
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -122,14 +151,52 @@ export default function NowWritePage() {
         try {
             setSubmitting(true);
 
+            let longitude = null;
+            let latitude = null;
+
+            if (navigator.geolocation) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(
+                            resolve,
+                            reject,
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 10000,
+                                maximumAge: 60000
+                            }
+                        );
+                    });
+
+                    longitude = position.coords.longitude;
+                    latitude = position.coords.latitude;
+                } catch (locationError) {
+                    console.warn('위치 정보를 가져오지 못했습니다.', locationError);
+                }
+            }
+
+            const formData = new FormData();
+
+            formData.append('kind', 'now');
+            formData.append('placeId', placeId);
+            formData.append('status', status);
+            formData.append('content', content);
+
+            if (longitude !== null) {
+                formData.append('longitude', String(longitude));
+            }
+
+            if (latitude !== null) {
+                formData.append('latitude', String(latitude));
+            }
+
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
             await apiFetch('/api/posts', {
                 method: 'POST',
-                body: JSON.stringify({
-                    kind: 'now',
-                    placeId,
-                    status,
-                    content
-                })
+                body: formData
             });
 
             router.push('/now');
@@ -261,7 +328,29 @@ export default function NowWritePage() {
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="지금 상황을 알려주세요."
                         maxLength={1000}
+                        spellCheck={false}
                     />
+                </div>
+
+                <div className="now-write-image">
+                    <label className="now-write-image-label">
+                        현장 사진
+                    </label>
+
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                    />
+
+                    {imagePreview && (
+                        <div className="now-write-image-preview">
+                            <img
+                                src={imagePreview}
+                                alt="업로드할 현장 사진 미리보기"
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <button

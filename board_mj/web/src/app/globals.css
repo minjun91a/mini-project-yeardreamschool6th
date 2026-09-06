@@ -584,6 +584,35 @@ header {
     line-height: 1.6;
 }
 
+.now-write-image {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.now-write-image-label {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.now-write-image input[type="file"] {
+    font-size: 14px;
+}
+
+.now-write-image-preview {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 18px;
+    border: 1px solid var(--ago-border);
+}
+
+.now-write-image-preview img {
+    display: block;
+    width: 100%;
+    max-height: 360px;
+    object-fit: cover;
+}
+
 .now-feed {
     display: flex;
     flex-direction: column;
@@ -609,6 +638,20 @@ header {
     box-shadow: var(--ago-shadow-hover);
 
     transform: translateY(-2px);
+}
+
+.now-card-image {
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--ago-border);
+}
+
+.now-card-image img {
+    display: block;
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
 }
 
 .now-place-area {
@@ -898,6 +941,22 @@ header {
     font-size: 13px;
 }
 
+.now-verified {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 26px;
+    padding: 0 9px;
+
+    background: #eef8ed;
+    color: #21843b;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
 
 /* ========================================
    8. NOW Write
@@ -1175,6 +1234,20 @@ header {
     background: var(--ago-lime-hover);
 }
 
+.place-now-image {
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--ago-border);
+}
+
+.place-now-image img {
+    display: block;
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+}
+
 .place-current-section {
     margin-bottom: 42px;
 }
@@ -1257,6 +1330,12 @@ header {
     gap: 12px;
 
     margin-bottom: 14px;
+}
+
+.place-now-card-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .place-now-time {

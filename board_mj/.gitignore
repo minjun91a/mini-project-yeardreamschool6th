@@ -5,3 +5,4 @@ node_modules
 *.log
 .idea/
 http-client.private.env.json
+server/uploads/

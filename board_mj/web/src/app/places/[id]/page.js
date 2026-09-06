@@ -131,6 +131,12 @@ export default function PlaceDetailPage() {
                                 {STATUS_LABEL[latestNow.status] || latestNow.status}
                             </strong>
 
+                            {latestNow.visitVerified && (
+                                <span className="now-verified">
+                                    현장 인증
+                                </span>
+                            )}
+
                             <span className="place-current-time">
                                 {formatRelativeTime(latestNow.createdAt)}
                             </span>
@@ -139,6 +145,15 @@ export default function PlaceDetailPage() {
                         <p className="place-current-content">
                             {latestNow.content}
                         </p>
+
+                        {latestNow.imageUrl && (
+                            <div className="place-now-image">
+                                <img
+                                    src={`${process.env.NEXT_PUBLIC_API_URL}${latestNow.imageUrl}`}
+                                    alt={`${place.name} 현장 사진`}
+                                />
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <p className="place-empty">최근 6시간 내 현장 정보가 없습니다.</p>
@@ -157,16 +172,35 @@ export default function PlaceDetailPage() {
                 {items.map((post) => (
                     <article key={post._id} className="place-now-card">
                         <div className="place-now-card-header">
-                            <strong className={`now-status ${post.status}`}>
-                                {STATUS_LABEL[post.status] || post.status}
-                            </strong>
+                            <div className="place-now-card-status">
+                                <strong className={`now-status ${post.status}`}>
+                                    {STATUS_LABEL[post.status] || post.status}
+                                </strong>
+
+                                {post.visitVerified && (
+                                    <span className="now-verified">
+                                        현장 인증
+                                    </span>
+                                )}
+                            </div>
 
                             <span className="place-now-time">
                                 {formatRelativeTime(post.createdAt)}
                             </span>
                         </div>
 
-                        <p className="place-now-content">{post.content}</p>
+                        <p className="place-now-content">
+                            {post.content}
+                        </p>
+
+                        {post.imageUrl && (
+                            <div className="place-now-image">
+                                <img
+                                    src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrl}`}
+                                    alt={`${place.name} 현장 사진`}
+                                />
+                            </div>
+                        )}
 
                         <footer className="place-now-footer">
                             {post.author?.name || '알 수 없음'}

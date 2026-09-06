@@ -46,6 +46,12 @@ const schema = new mongoose.Schema(
             default: false
         },
 
+        imageUrl: {
+            type: String,
+            default: null,
+            trim: true
+        },
+
         viewCount: {
             type: Number,
             default: 0

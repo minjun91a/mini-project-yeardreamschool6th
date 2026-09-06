@@ -333,15 +333,15 @@ export default function NowPage() {
                                         <strong>{place.name}</strong>
 
                                         <span>
-                                {CATEGORY_LABEL[place.category] || place.category}
+                                            {CATEGORY_LABEL[place.category] || place.category}
                                             {' · '}
                                             {place.address}
-                            </span>
+                                         </span>
                                     </div>
 
                                     <span className="now-place-search-arrow">
-                            →
-                        </span>
+                                        →
+                                    </span>
                                 </Link>
                             ))}
                         </div>
@@ -394,9 +394,9 @@ export default function NowPage() {
 
                                         {post.place?.category && (
                                             <span className="now-category">
-                                    {CATEGORY_LABEL[post.place.category] ||
-                                        post.place.category}
-                                </span>
+                                                {CATEGORY_LABEL[post.place.category] ||
+                                                    post.place.category}
+                                            </span>
                                         )}
 
                                         {post.place?.address && (
@@ -422,21 +422,36 @@ export default function NowPage() {
                                             {STATUS_LABEL[post.status] || post.status}
                                         </strong>
 
+                                        {post.visitVerified && (
+                                            <span className="now-verified">
+                                                현장 인증
+                                            </span>
+                                        )}
+
                                         <span
                                             className={`now-freshness ${freshness.type}`}
                                         >
-                                {formatRelativeTime(post.createdAt)}
-                            </span>
+                                            {formatRelativeTime(post.createdAt)}
+                                        </span>
                                     </div>
 
                                     <p className="now-content">
                                         {post.content}
                                     </p>
 
+                                    {post.imageUrl && (
+                                        <div className="now-card-image">
+                                            <img
+                                                src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrl}`}
+                                                alt={`${post.place?.name || '장소'} 현장 사진`}
+                                            />
+                                        </div>
+                                    )}
+
                                     <footer className="now-footer">
-                            <span>
-                                {post.author?.name || '알 수 없음'}
-                            </span>
+                                        <span>
+                                            {post.author?.name || '알 수 없음'}
+                                        </span>
 
                                         <span>현장 제보</span>
                                     </footer>

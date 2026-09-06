@@ -5,6 +5,7 @@ const auth = require('../middlewares/auth');
 const Comment = require('../models/comment');
 const mongoose = require('mongoose');
 const Place = require('../models/place');
+const upload = require('../middlewares/upload');
 
 function getDistanceMeters(lat1, lon1, lat2, lon2) {
     const R = 6371000;
@@ -76,101 +77,146 @@ router.get('/:id', async (req, res) => {
     });
 });
 
-router.post('/', auth, async (req, res) => {
-    const kind = req.body.kind || 'board';
+router.post(
+    '/',
+    auth,
+    upload.single('image'),
+    async (req, res) => {
+        const kind = req.body.kind || 'board';
 
-    const {
-        title,
-        content,
-        placeId,
-        status,
-        longitude,
-        latitude
-    } = req.body;
+        const {
+            title,
+            content,
+            placeId,
+            status,
+            longitude,
+            latitude
+        } = req.body;
 
-    const allowedKinds = ['board', 'now'];
+        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
-    if (!allowedKinds.includes(kind)) {
-        return res.status(400).json({
-            success: false,
-            error: {
-                code: 'INVALID_KIND',
-                message: '게시글 종류가 올바르지 않습니다.'
+        const allowedKinds = ['board', 'now'];
+
+        if (!allowedKinds.includes(kind)) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'INVALID_KIND',
+                    message: '게시글 종류가 올바르지 않습니다.'
+                }
+            });
+        }
+
+        if (kind === 'now') {
+            if (!placeId) {
+                return res.status(400).json({
+                    success: false,
+                    error: {
+                        code: 'PLACE_ID_REQUIRED',
+                        message: '장소를 선택해주세요.'
+                    }
+                });
             }
-        });
-    }
 
-    if (kind === 'now') {
-        if (!placeId) {
-            return res.status(400).json({
-                success: false,
-                error: {
-                    code: 'PLACE_ID_REQUIRED',
-                    message: '장소를 선택해주세요.'
-                }
+            if (!mongoose.isValidObjectId(placeId)) {
+                return res.status(400).json({
+                    success: false,
+                    error: {
+                        code: 'INVALID_PLACE_ID',
+                        message: '올바르지 않은 장소 ID입니다.'
+                    }
+                });
+            }
+
+            const place = await Place.findById(placeId);
+
+            if (!place) {
+                return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: 'PLACE_NOT_FOUND',
+                        message: '장소를 찾을 수 없습니다.'
+                    }
+                });
+            }
+
+            let visitVerified = false;
+
+            const longitudeNumber = Number(longitude);
+            const latitudeNumber = Number(latitude);
+
+            if (
+                Number.isFinite(longitudeNumber) &&
+                Number.isFinite(latitudeNumber) &&
+                place?.location?.coordinates?.length === 2
+            ) {
+                const [placeLongitude, placeLatitude] =
+                    place.location.coordinates;
+
+                const distance = getDistanceMeters(
+                    latitudeNumber,
+                    longitudeNumber,
+                    placeLatitude,
+                    placeLongitude
+                );
+
+                visitVerified = distance <= 300;
+            }
+
+            const allowedStatuses = ['quiet', 'normal', 'busy'];
+
+            if (!status) {
+                return res.status(400).json({
+                    success: false,
+                    error: {
+                        code: 'STATUS_REQUIRED',
+                        message: '현재 상태를 선택해주세요.'
+                    }
+                });
+            }
+
+            if (!allowedStatuses.includes(status)) {
+                return res.status(400).json({
+                    success: false,
+                    error: {
+                        code: 'INVALID_STATUS',
+                        message: '현재 상태 값이 올바르지 않습니다.'
+                    }
+                });
+            }
+
+            if (typeof content !== 'string' || !content.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    error: {
+                        code: 'CONTENT_REQUIRED',
+                        message: '내용을 입력해주세요.'
+                    }
+                });
+            }
+
+            const post = await Post.create({
+                kind: 'now',
+                content,
+                author: req.user.sub,
+                place: placeId,
+                status,
+                visitVerified,
+                imageUrl
+            });
+
+            return res.status(201).json({
+                success: true,
+                data: {post}
             });
         }
 
-        if (!mongoose.isValidObjectId(placeId)) {
+        if (typeof title !== 'string' || !title.trim()) {
             return res.status(400).json({
                 success: false,
                 error: {
-                    code: 'INVALID_PLACE_ID',
-                    message: '올바르지 않은 장소 ID입니다.'
-                }
-            });
-        }
-
-        const place = await Place.findById(placeId);
-
-        if (!place) {
-            return res.status(404).json({
-                success: false,
-                error: {
-                    code: 'PLACE_NOT_FOUND',
-                    message: '장소를 찾을 수 없습니다.'
-                }
-            });
-        }
-
-        let visitVerified = false;
-
-        if (
-            Number.isFinite(longitude) &&
-            Number.isFinite(latitude) &&
-            place?.location?.coordinates?.length === 2
-        ) {
-            const [placeLongitude, placeLatitude] =
-                place.location.coordinates;
-
-            const distance = getDistanceMeters(
-                latitude,
-                longitude,
-                placeLatitude,
-                placeLongitude
-            );
-
-            visitVerified = distance <= 300;
-        }
-
-        const allowedStatuses = ['quiet', 'normal', 'busy'];
-
-        if (!status) {
-            return res.status(400).json({
-                success: false,
-                error: {
-                    code: 'STATUS_REQUIRED',
-                    message: '현재 상태를 선택해주세요.'
-                }
-            });
-        }
-
-        if (!allowedStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                error: {
-                    code: 'INVALID_STATUS',
-                    message: '현재 상태 값이 올바르지 않습니다.'
+                    code: 'TITLE_REQUIRED',
+                    message: '제목을 입력해주세요.'
                 }
             });
         }
@@ -186,52 +232,17 @@ router.post('/', auth, async (req, res) => {
         }
 
         const post = await Post.create({
-            kind: 'now',
+            kind: 'board',
+            title,
             content,
-            author: req.user.sub,
-            place: placeId,
-            status,
-            visitVerified
+            author: req.user.sub
         });
 
         return res.status(201).json({
             success: true,
             data: {post}
         });
-    }
-
-    if (typeof title !== 'string' || !title.trim()) {
-        return res.status(400).json({
-            success: false,
-            error: {
-                code: 'TITLE_REQUIRED',
-                message: '제목을 입력해주세요.'
-            }
-        });
-    }
-
-    if (typeof content !== 'string' || !content.trim()) {
-        return res.status(400).json({
-            success: false,
-            error: {
-                code: 'CONTENT_REQUIRED',
-                message: '내용을 입력해주세요.'
-            }
-        });
-    }
-
-    const post = await Post.create({
-        kind: 'board',
-        title,
-        content,
-        author: req.user.sub
     });
-
-    return res.status(201).json({
-        success: true,
-        data: {post}
-    });
-});
 
 router.patch('/:id', auth, async (req, res) => {
     const post = await Post.findById(req.params.id);
