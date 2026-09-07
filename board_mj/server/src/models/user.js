@@ -35,6 +35,16 @@ const schema = new mongoose.Schema({
     followedPlaces: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Place'
+    }],
+
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }]
 }, {collection: 'users', timestamps: true, id: false});
 

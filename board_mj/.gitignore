@@ -8,3 +8,6 @@ http-client.private.env.json
 server/uploads/
 server/test.http
 server/test-image.jpg
+# Local development files
+classnames.txt
+web/src/app/globals.css.bak-before-now-clean

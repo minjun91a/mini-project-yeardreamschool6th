@@ -42,7 +42,7 @@ export default function Header() {
 
         setMe(null);
 
-        router.push('/');
+        router.push('/now');
     }
 
     return (
@@ -51,11 +51,27 @@ export default function Header() {
                 ago<span className="ago-logo-dot">.</span>
             </Link>
 
-            {!me && (
-                <Link href="/login" className="header-login-link">
-                    로그인
-                </Link>
-            )}
+            <div className="header-actions">
+                {!me ? (
+                    <Link href="/login" className="header-login-link">
+                        로그인
+                    </Link>
+                ) : (
+                    <>
+                        <span className="header-user-name">
+                            {me.name || me.id}
+                        </span>
+
+                        <button
+                            type="button"
+                            className="header-logout-button"
+                            onClick={handleLogout}
+                        >
+                            로그아웃
+                        </button>
+                    </>
+                )}
+            </div>
         </header>
     );
 }

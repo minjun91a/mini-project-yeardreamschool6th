@@ -62,10 +62,26 @@ router.get('/', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, parseInt(req.query.limit) || 10);
     const kind = req.query.kind;
+    const author = req.query.author;
+
     const filter = {};
 
     if (kind) {
         filter.kind = kind;
+    }
+
+    if (author) {
+        if (!mongoose.isValidObjectId(author)) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'INVALID_AUTHOR_ID',
+                    message: '올바르지 않은 사용자 ID입니다.'
+                }
+            });
+        }
+
+        filter.author = author;
     }
 
     const items = await Post.find(filter)

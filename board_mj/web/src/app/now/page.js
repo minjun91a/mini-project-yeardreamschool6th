@@ -424,6 +424,21 @@ export default function NowPage() {
                                         {post.content}
                                     </p>
 
+                                    {post.author?._id && (
+                                        <Link
+                                            href={`/profile/${post.author._id}`}
+                                            className="home-now-author"
+                                        >
+                                            <span className="home-now-author-avatar">
+                                                {(post.author.name || 'A').charAt(0).toUpperCase()}
+                                            </span>
+
+                                            <span className="home-now-author-name">
+                                                {post.author.name || 'ago 사용자'}
+                                            </span>
+                                        </Link>
+                                    )}
+
                                     <footer className="home-now-card-footer">
                                         <div className="home-now-card-actions">
                                             <span className="home-now-action">
