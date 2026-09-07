@@ -3,6 +3,7 @@
 import {useEffect, useState} from 'react';
 import Link from 'next/link';
 import {apiFetch} from '@/lib/api';
+import dynamic from "next/dynamic";
 
 const CATEGORY_LABEL = {
     cafe: '카페',
@@ -15,12 +16,33 @@ const CATEGORY_LABEL = {
     etc: '기타',
 };
 
+const CATEGORY_FILTERS = [
+    {value: 'all', label: '전체'},
+    {value: 'cafe', label: '카페'},
+    {value: 'restaurant', label: '맛집'},
+    {value: 'bar', label: '술집'},
+    {value: 'popup', label: '팝업'},
+    {value: 'shopping', label: '쇼핑'},
+    {value: 'park', label: '공원'},
+    {value: 'culture', label: '문화'},
+];
+
+const PlacesMap = dynamic(
+    () => import('./PlacesMap'),
+    {
+        ssr: false,
+    }
+);
+
 export default function PlacesPage() {
     const [query, setQuery] = useState('');
     const [places, setPlaces] = useState([]);
     const [loading, setLoading] = useState(false);
     const [locationLoading, setLocationLoading] = useState(false);
     const [error, setError] = useState('');
+    const [userLocation, setUserLocation] = useState(null);
+    const [selectedPlace, setSelectedPlace] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState('all');
 
     useEffect(() => {
         if (!query.trim()) {
@@ -31,6 +53,7 @@ export default function PlacesPage() {
         const timer = setTimeout(async () => {
             try {
                 setLoading(true);
+                setUserLocation(null);
 
                 const data = await apiFetch(
                     `/api/places?q=${encodeURIComponent(query.trim())}`
@@ -61,6 +84,11 @@ export default function PlacesPage() {
                 try {
                     const {latitude, longitude} = position.coords;
 
+                    setUserLocation({
+                        latitude,
+                        longitude,
+                    });
+
                     const data = await apiFetch(
                         `/api/places/nearby?longitude=${longitude}&latitude=${latitude}&maxDistance=3000`
                     );
@@ -79,58 +107,112 @@ export default function PlacesPage() {
         );
     }
 
+    const filteredPlaces =
+        selectedCategory === 'all'
+            ? places
+            : places.filter(
+                (place) => place.category === selectedCategory
+            );
+
     return (
         <main className="places-page">
-            <header className="places-app-header">
-                <h1>
-                    장소 <span>보기</span>
-                </h1>
-
-                <p>지도와 검색으로 주변의 지금을 확인하세요.</p>
-            </header>
 
             <section className="places-map-shell">
-                <div className="places-search">
-                    <span className="places-search-icon">⌕</span>
+                <div className="places-search-row">
+                    <div className="places-search">
+                        <span className="places-search-icon">⌕</span>
 
-                    <input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="장소, 지역 검색"
-                    />
+                        <input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="장소, 지역 검색"
+                        />
 
-                    {query && (
-                        <button
-                            type="button"
-                            onClick={() => setQuery('')}
-                            aria-label="검색어 지우기"
-                        >
-                            ×
-                        </button>
-                    )}
+                        {query && (
+                            <button
+                                type="button"
+                                onClick={() => setQuery('')}
+                                aria-label="검색어 지우기"
+                            >
+                                ×
+                            </button>
+                        )}
+                    </div>
+
+                    <button
+                        type="button"
+                        className="places-filter-button"
+                        aria-label="필터"
+                    >
+                        ☷
+                    </button>
                 </div>
 
                 <div className="places-category-row">
-                    <button className="active">전체</button>
-                    <button>카페</button>
-                    <button>맛집</button>
-                    <button>편의점</button>
-                    <button>주차</button>
-                    <button>문화</button>
+                    {CATEGORY_FILTERS.map((category) => (
+                        <button
+                            key={category.value}
+                            type="button"
+                            className={
+                                selectedCategory === category.value
+                                    ? 'active'
+                                    : ''
+                            }
+                            onClick={() => {
+                                setSelectedCategory(category.value);
+                                setSelectedPlace(null);
+                            }}
+                        >
+                            {category.label}
+                        </button>
+                    ))}
                 </div>
 
                 <div className="places-map">
-                    <div className="places-map-placeholder">
-                        <span className="places-map-pin">●</span>
+                    <PlacesMap
+                        places={filteredPlaces}
+                        userLocation={userLocation}
+                        selectedPlace={selectedPlace}
+                        onSelectPlace={setSelectedPlace}
+                    />
 
-                        <strong>지도 연결 예정</strong>
+                    {selectedPlace && (
+                        <Link
+                            href={`/places/${selectedPlace._id}`}
+                            className="places-map-card"
+                        >
+                            <div className="places-map-card-main">
+                                <div className="places-map-card-title-row">
+                                    <strong>{selectedPlace.name}</strong>
 
-                        <p>
-                            다음 단계에서 실제 지도와
-                            <br />
-                            장소 마커를 연결합니다.
-                        </p>
-                    </div>
+                                    {selectedPlace.distance != null && (
+                                        <span className="places-map-card-distance">
+                                            {selectedPlace.distance < 1000
+                                                ? `${Math.round(selectedPlace.distance)}m`
+                                                : `${(selectedPlace.distance / 1000).toFixed(1)}km`}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="places-map-card-tags">
+                                    <span className="places-map-card-category">
+                                        {CATEGORY_LABEL[selectedPlace.category] ||
+                                            selectedPlace.category}
+                                    </span>
+
+                                    <span className="places-map-card-status">
+                                        지금 정보 보기
+                                    </span>
+                                </div>
+
+                                <p>{selectedPlace.address}</p>
+
+                                <span className="places-map-card-link">
+                                    장소 상세 보기 →
+                                </span>
+                            </div>
+                        </Link>
+                    )}
 
                     <button
                         type="button"
@@ -138,7 +220,22 @@ export default function PlacesPage() {
                         onClick={loadNearbyPlaces}
                         disabled={locationLoading}
                     >
-                        {locationLoading ? '...' : '◎'}
+                        {locationLoading ? (
+                            <span>...</span>
+                        ) : (
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="19"
+                                height="19"
+                                aria-hidden="true"
+                            >
+                                <circle cx="12" cy="12" r="4"/>
+                                <path d="M12 2v3"/>
+                                <path d="M12 19v3"/>
+                                <path d="M2 12h3"/>
+                                <path d="M19 12h3"/>
+                            </svg>
+                        )}
                     </button>
                 </div>
             </section>
@@ -149,46 +246,11 @@ export default function PlacesPage() {
                 </p>
             )}
 
-            <section className="places-results">
-                {loading && (
-                    <p className="places-state">
-                        검색 중...
-                    </p>
-                )}
-
-                {!loading && places.length > 0 && (
-                    <>
-                        <h2>주변 장소</h2>
-
-                        {places.map((place) => (
-                            <Link
-                                href={`/places/${place._id}`}
-                                key={place._id}
-                                className="places-result-card"
-                            >
-                                <div className="places-result-main">
-                                    <strong>{place.name}</strong>
-
-                                    <span>
-                                        {CATEGORY_LABEL[place.category] ||
-                                            place.category}
-                                    </span>
-
-                                    <p>{place.address}</p>
-                                </div>
-
-                                {place.distance != null && (
-                                    <strong className="places-distance">
-                                        {place.distance < 1000
-                                            ? `${Math.round(place.distance)}m`
-                                            : `${(place.distance / 1000).toFixed(1)}km`}
-                                    </strong>
-                                )}
-                            </Link>
-                        ))}
-                    </>
-                )}
-            </section>
+            {loading && (
+                <p className="places-map-state">
+                    장소 찾는 중...
+                </p>
+            )}
         </main>
     );
 }
