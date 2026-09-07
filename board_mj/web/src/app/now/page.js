@@ -450,14 +450,16 @@ export default function NowPage() {
                                                 현장에 있어요
                                             </span>
 
-                                            <span className="home-now-action">
+                                            <Link
+                                                href={`/posts/${post._id}`}
+                                                className="home-now-action"
+                                            >
                                                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                                                    <path
-                                                        d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
+                                                    <path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
                                                 </svg>
 
-                                                댓글
-                                            </span>
+                                                댓글 {post.commentCount || 0}
+                                            </Link>
                                         </div>
 
                                         <button

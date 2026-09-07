@@ -113,7 +113,16 @@ router.get('/:id', async (req, res) => {
 
     post.viewCount += 1;
     await post.save();
-    await post.populate('author', 'id name');
+    await post.populate([
+        {
+            path: 'author',
+            select: 'id name'
+        },
+        {
+            path: 'place',
+            select: 'name category address'
+        }
+    ]);
 
     return res.json({
         success: true,

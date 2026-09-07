@@ -52,6 +52,11 @@ const schema = new mongoose.Schema(
             trim: true
         },
 
+        commentCount: {
+            type: Number,
+            default: 0
+        },
+
         viewCount: {
             type: Number,
             default: 0

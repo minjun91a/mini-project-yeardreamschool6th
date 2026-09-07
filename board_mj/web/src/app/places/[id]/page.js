@@ -98,6 +98,33 @@ export default function PlaceDetailPage() {
     }
 
     const latestPost = items.length > 0 ? items[0] : null;
+    const historyItems = items.filter((post, index, array) => {
+        if (index === 0) {
+            return true;
+        }
+
+        return post.status !== array[index - 1].status;
+    }).slice(0, 5);
+
+    const recentVerifiedUsers = items
+        .filter((post) => {
+            if (!post.visitVerified || !post.author?._id) {
+                return false;
+            }
+
+            const createdAt = new Date(post.createdAt).getTime();
+            const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+
+            return createdAt >= threeHoursAgo;
+        })
+        .filter((post, index, array) => {
+            return (
+                array.findIndex(
+                    (item) => item.author?._id === post.author?._id
+                ) === index
+            );
+        })
+        .slice(0, 6);
 
     const latestNow =
         latestPost &&
@@ -189,24 +216,89 @@ export default function PlaceDetailPage() {
 
                 <section className="place-detail-live">
                     <div className="place-detail-section-head">
-                        <h2>지금 이 장소에 있는 사람들</h2>
-                    </div>
-
-                    <div className="place-detail-people">
-                        <div className="place-detail-person active">
-                            <div className="place-detail-avatar">
-                                나
-                            </div>
-                            <span>나</span>
-                        </div>
-
-                        <div className="place-detail-person">
-                            <div className="place-detail-avatar">
-                                ?
-                            </div>
-                            <span>현장</span>
+                        <div>
+                            <h2>최근 현장 인증 사용자</h2>
+                            <p>최근 3시간 내 이 장소에서 인증한 사용자예요.</p>
                         </div>
                     </div>
+
+                    {recentVerifiedUsers.length === 0 ? (
+                        <div className="place-detail-live-empty">
+                            최근 현장 인증 사용자가 없습니다.
+                        </div>
+                    ) : (
+                        <div className="place-detail-people">
+                            {recentVerifiedUsers.map((post) => (
+                                <Link
+                                    key={post.author._id}
+                                    href={`/profile/${post.author._id}`}
+                                    className="place-detail-person"
+                                >
+                                    <div className="place-detail-avatar">
+                                        {post.author?.name?.[0] || '?'}
+                                    </div>
+
+                                    <span>
+                                        {post.author?.name || '사용자'}
+                                    </span>
+
+                                    <small>
+                                        {formatRelativeTime(post.createdAt)}
+                                    </small>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                <section className="place-detail-history">
+                    <div className="place-detail-section-head">
+                        <div>
+                            <h2>최근 현장 기록</h2>
+                            <p>이 장소의 최근 상태 변화를 확인해보세요.</p>
+                        </div>
+                    </div>
+
+                    {historyItems.length === 0 ? (
+                        <div className="place-detail-history-empty">
+                            아직 쌓인 현장 기록이 없습니다.
+                        </div>
+                    ) : (
+                        <div className="place-detail-history-list">
+                            {historyItems.map((post, index) => (
+                                <div
+                                    key={post._id}
+                                    className="place-detail-history-item"
+                                >
+                                    <div className="place-detail-history-line">
+                                        <span
+                                            className={`place-detail-history-dot ${post.status}`}
+                                        />
+
+                                        {index < historyItems.length - 1 && (
+                                            <span className="place-detail-history-rail" />
+                                        )}
+                                    </div>
+
+                                    <div className="place-detail-history-content">
+                                        <span className={`now-status ${post.status}`}>
+                                            {STATUS_LABEL[post.status] || post.status}
+                                        </span>
+
+                                        <span className="place-detail-history-time">
+                                            {formatRelativeTime(post.createdAt)}
+                                        </span>
+
+                                        {post.author?.name && (
+                                            <span className="place-detail-history-author">
+                                                {post.author.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </section>
 
                 <section className="place-detail-feed">
@@ -276,12 +368,16 @@ export default function PlaceDetailPage() {
                                         현장에 있어요
                                     </span>
 
-                                    <span className="place-detail-action">
+                                    <Link
+                                        href={`/posts/${post._id}`}
+                                        className="place-detail-action"
+                                    >
                                         <svg viewBox="0 0 24 24" aria-hidden="true">
                                             <path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
                                         </svg>
-                                        댓글
-                                    </span>
+
+                                        댓글 {post.commentCount || 0}
+                                    </Link>
                                 </div>
 
                                 <button
