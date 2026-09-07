@@ -297,7 +297,15 @@ export default function NowWritePage() {
                             }}
                         >
                         <span className="now-write-place-pin">
-                            ●
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                aria-hidden="true"
+                            >
+                                <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" />
+                                <circle cx="12" cy="10" r="2.2" />
+                            </svg>
                         </span>
 
                             <span className="now-write-place-info">
@@ -364,14 +372,36 @@ export default function NowWritePage() {
 
                 <section className="now-write-media-section">
                     <label className="now-write-image-button">
-                        <span>▧</span>
-                        사진 / 동영상
-
                         <input
                             type="file"
                             accept="image/*"
                             onChange={handleImageChange}
                         />
+
+                        <span className="now-write-image-icon">
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                aria-hidden="true"
+                            >
+                                <rect
+                                    x="3"
+                                    y="4"
+                                    width="18"
+                                    height="16"
+                                    rx="2"
+                                />
+                                <circle
+                                    cx="15.5"
+                                    cy="8.5"
+                                    r="1.5"
+                                />
+                                <path d="M4 17l5-5 4 4 2-2 5 5" />
+                            </svg>
+                        </span>
+
+                        사진 / 동영상
                     </label>
 
                     {imagePreview && (
