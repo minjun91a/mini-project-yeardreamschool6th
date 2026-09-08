@@ -30,6 +30,7 @@ const KAKAO_CATEGORY_GROUPS_BY_PLACE_CATEGORY = {
     all: ['CE7', 'FD6', 'CT1', 'AT4'],
     cafe: ['CE7'],
     restaurant: ['FD6'],
+    bar: ['FD6'],
     culture: ['CT1', 'AT4']
 };
 
@@ -60,6 +61,14 @@ function toExternalSourceMatch(place) {
 function getKakaoCategoryGroupCodes(category) {
     return KAKAO_CATEGORY_GROUPS_BY_PLACE_CATEGORY[category] ||
         KAKAO_CATEGORY_GROUPS_BY_PLACE_CATEGORY.all;
+}
+
+function filterExternalPlacesByCategory(places, category) {
+    if (!category || category === 'all') {
+        return places;
+    }
+
+    return places.filter((place) => place.category === category);
 }
 
 async function findMatchedPlacesByExternalIds(externalPlaces) {
@@ -634,6 +643,10 @@ router.get('/nearby', async (req, res) => {
                 radius: maxDistance,
                 size: 15
             });
+            externalPlaces = filterExternalPlacesByCategory(
+                externalPlaces,
+                category
+            );
         } catch (err) {
             console.error(
                 '[places-nearby-external]',

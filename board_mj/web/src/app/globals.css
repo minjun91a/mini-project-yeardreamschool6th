@@ -433,17 +433,44 @@ main {
 
 .home-now-location {
     width: fit-content;
+    min-height: 30px;
 
     display: inline-flex;
     align-items: center;
     gap: 5px;
 
-    padding: 0;
+    padding: 0 9px;
 
     background: transparent;
-    border: 0;
+    border: 1px solid transparent;
+    border-radius: 999px;
 
     cursor: pointer;
+
+    transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
+}
+
+.home-now-location:hover {
+    background: #F7F7F2;
+    border-color: var(--ago-border);
+}
+
+.home-now-location.active {
+    background: var(--ago-lime-soft);
+    border-color: #D8EAA1;
+}
+
+.home-now-location.active .home-now-location-area,
+.home-now-location.active .home-now-location-label {
+    color: var(--ago-text);
+}
+
+.home-now-location:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 .home-now-location-arrow {
@@ -1911,24 +1938,39 @@ main {
 }
 
 .places-filter-button {
-    width: 44px;
+    min-width: 58px;
     height: 44px;
 
-    flex: 0 0 44px;
+    flex: 0 0 auto;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
+    padding: 0 12px;
+
     background: #FFFFFF;
-    color: var(--ago-text);
+    color: var(--ago-muted);
 
     border: 1px solid var(--ago-border);
-    border-radius: 14px;
+    border-radius: 12px;
 
-    font-size: 18px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
 
     cursor: pointer;
+
+    transition:
+            background 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
+}
+
+.places-filter-button:hover {
+    background: #F7F7F2;
+    color: var(--ago-text);
+    border-color: var(--ago-border-strong);
 }
 
 
@@ -2064,12 +2106,116 @@ main {
     cursor: default;
 }
 
+.places-location-button.active {
+    background: var(--ago-lime);
+    color: var(--ago-text);
+    border-color: #B8D742;
+    box-shadow:
+            0 0 0 4px rgba(198, 240, 71, 0.28),
+            0 8px 20px rgba(31, 31, 31, 0.16);
+}
+
 .places-location-button svg {
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+.places-map-pin {
+    width: 28px;
+    height: 36px;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.places-map-pin span {
+    position: relative;
+
+    width: 22px;
+    height: 22px;
+
+    display: block;
+
+    background: var(--ago-subtle);
+
+    border: 3px solid #FFFFFF;
+    border-radius: 50% 50% 50% 0;
+
+    box-shadow:
+            0 5px 14px rgba(31, 31, 31, 0.24);
+
+    transform: rotate(-45deg);
+}
+
+.places-map-pin span::after {
+    content: "";
+
+    position: absolute;
+    inset: 5px;
+
+    background: rgba(255, 255, 255, 0.82);
+
+    border-radius: 50%;
+}
+
+.places-map-pin.status-quiet span {
+    background: var(--ago-green-text);
+}
+
+.places-map-pin.status-normal span {
+    background: var(--ago-yellow-text);
+}
+
+.places-map-pin.status-busy span {
+    background: var(--ago-red-text);
+}
+
+.places-map-pin.status-unknown span {
+    background: var(--ago-subtle);
+}
+
+.places-map-pin.external span {
+    border-color: #1F1F1F;
+}
+
+.places-map-pin.selected span {
+    width: 28px;
+    height: 28px;
+
+    background: var(--ago-lime);
+    border-color: var(--ago-text);
+}
+
+.places-map-pin.selected span::after {
+    background: var(--ago-text);
+}
+
+.places-map-pin.user-location {
+    align-items: center;
+}
+
+.places-map-pin.user-location span {
+    width: 18px;
+    height: 18px;
+
+    background: var(--ago-green);
+
+    border: 4px solid #FFFFFF;
+    border-radius: 50%;
+
+    transform: none;
+
+    box-shadow:
+            0 0 0 5px rgba(22, 163, 68, 0.18),
+            0 5px 14px rgba(31, 31, 31, 0.22);
+}
+
+.places-map-pin.user-location span::after {
+    display: none;
 }
 
 

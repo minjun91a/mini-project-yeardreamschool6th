@@ -1,10 +1,10 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {apiFetch} from '@/lib/api';
-import dynamic from "next/dynamic";
 
 const CATEGORY_LABEL = {
     cafe: '카페',
@@ -32,10 +32,10 @@ const CATEGORY_FILTERS = [
 ];
 
 const STATUS_LABEL = {
-    quiet: '🟢 여유',
-    normal: '🟡 보통',
-    busy: '🔴 혼잡',
-    unknown: '정보 없음'
+    quiet: '여유',
+    normal: '보통',
+    busy: '혼잡',
+    unknown: '정보 부족'
 };
 
 const STATUS_FILTERS = [
@@ -43,8 +43,15 @@ const STATUS_FILTERS = [
     {value: 'quiet', label: '여유'},
     {value: 'normal', label: '보통'},
     {value: 'busy', label: '혼잡'},
-    {value: 'unknown', label: '정보 없음'}
+    {value: 'unknown', label: '정보 부족'}
 ];
+
+const PlacesMap = dynamic(
+    () => import('./PlacesMap'),
+    {
+        ssr: false,
+    }
+);
 
 function getCategoryParam(category) {
     return category === 'all' ? null : category;
@@ -64,15 +71,21 @@ function getPlaceStatus(place) {
     return place.currentStatus?.status || 'unknown';
 }
 
-const PlacesMap = dynamic(
-    () => import('./PlacesMap'),
-    {
-        ssr: false,
+function formatDistance(distance) {
+    if (distance == null) {
+        return null;
     }
-);
+
+    if (distance < 1000) {
+        return `${Math.round(distance)}m`;
+    }
+
+    return `${(distance / 1000).toFixed(1)}km`;
+}
 
 export default function PlacesPage() {
     const router = useRouter();
+    const initialLocationRequestedRef = useRef(false);
     const [query, setQuery] = useState('');
     const [places, setPlaces] = useState([]);
     const [externalPlaces, setExternalPlaces] = useState([]);
@@ -85,27 +98,18 @@ export default function PlacesPage() {
     const [selectedPlace, setSelectedPlace] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
+    const nearbyMode = Boolean(userLocation);
 
-    async function loadNearbyPlacesForLocation(location) {
-        const params = new URLSearchParams({
-            longitude: String(location.longitude),
-            latitude: String(location.latitude),
-            maxDistance: '3000',
-            includeExternal: 'true'
-        });
-
-        const category = getCategoryParam(selectedCategory);
-
-        if (category) {
-            params.set('category', category);
+    useEffect(() => {
+        if (initialLocationRequestedRef.current) {
+            return;
         }
 
-        const data = await apiFetch(`/api/places/nearby?${params}`);
-
-        setPlaces(data.places || []);
-        setExternalPlaces(data.externalPlaces || []);
-        setExternalError(data.externalError?.message || '');
-    }
+        initialLocationRequestedRef.current = true;
+        requestCurrentLocation({
+            showError: false
+        });
+    }, []);
 
     useEffect(() => {
         if (!query.trim()) {
@@ -228,6 +232,7 @@ export default function PlacesPage() {
             try {
                 setLocationLoading(true);
                 setError('');
+                setExternalError('');
                 setSelectedPlace(null);
 
                 const params = new URLSearchParams({
@@ -255,6 +260,7 @@ export default function PlacesPage() {
                     setError(err.message);
                     setPlaces([]);
                     setExternalPlaces([]);
+                    setExternalError('');
                 }
             } finally {
                 if (!ignore) {
@@ -270,40 +276,66 @@ export default function PlacesPage() {
         };
     }, [selectedCategory, userLocation, query]);
 
-    function loadNearbyPlaces() {
+    function requestCurrentLocation({showError = true} = {}) {
         if (!navigator.geolocation) {
-            setError('현재 브라우저에서는 위치 정보를 사용할 수 없습니다.');
+            if (showError) {
+                setError('현재 브라우저에서 위치 정보를 사용할 수 없습니다.');
+            }
+
             return;
         }
 
         setLocationLoading(true);
         setError('');
+        setExternalError('');
 
         navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    const {latitude, longitude} = position.coords;
+            (position) => {
+                const {latitude, longitude} = position.coords;
 
-                    setUserLocation({
-                        latitude,
-                        longitude,
-                    });
-
-                    await loadNearbyPlacesForLocation({
-                        latitude,
-                        longitude
-                    });
-                } catch (err) {
-                    setError(err.message);
-                } finally {
-                    setLocationLoading(false);
-                }
+                setUserLocation({
+                    latitude,
+                    longitude,
+                });
+                setLocationLoading(false);
             },
             () => {
-                setError('현재 위치를 가져오지 못했습니다.');
+                if (showError) {
+                    setError('현재 위치를 가져오지 못했습니다.');
+                }
+
                 setLocationLoading(false);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
             }
         );
+    }
+
+    function loadNearbyPlaces() {
+        if (nearbyMode) {
+            setUserLocation(null);
+            setSelectedPlace(null);
+            setExternalPlaces([]);
+            setExternalError('');
+            setError('');
+            return;
+        }
+
+        requestCurrentLocation();
+    }
+
+    function resetFilters() {
+        setQuery('');
+        setUserLocation(null);
+        setSelectedCategory('all');
+        setSelectedStatus('all');
+        setSelectedPlace(null);
+        setExternalPlaces([]);
+        setExternalError('');
+        setError('');
     }
 
     const filteredPlaces = places.filter((place) => {
@@ -392,7 +424,6 @@ export default function PlacesPage() {
 
     return (
         <main className="places-page">
-
             <section className="places-map-shell">
                 <div className="places-search-row">
                     <div className="places-search">
@@ -401,7 +432,7 @@ export default function PlacesPage() {
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="장소, 지역 검색"
+                            placeholder="장소 이름이나 주소를 검색하세요"
                         />
 
                         {query && (
@@ -418,9 +449,10 @@ export default function PlacesPage() {
                     <button
                         type="button"
                         className="places-filter-button"
-                        aria-label="필터"
+                        aria-label="필터 초기화"
+                        onClick={resetFilters}
                     >
-                        ☷
+                        초기화
                     </button>
                 </div>
 
@@ -483,9 +515,7 @@ export default function PlacesPage() {
 
                                     {selectedPlace.distance != null && (
                                         <span className="places-map-card-distance">
-                                            {selectedPlace.distance < 1000
-                                                ? `${Math.round(selectedPlace.distance)}m`
-                                                : `${(selectedPlace.distance / 1000).toFixed(1)}km`}
+                                            {formatDistance(selectedPlace.distance)}
                                         </span>
                                     )}
                                 </div>
@@ -518,7 +548,7 @@ export default function PlacesPage() {
                                 </div>
 
                                 <span className="places-map-card-link">
-                                    장소 상세 보기 →
+                                    장소 상세 보기 ›
                                 </span>
                             </div>
                         </Link>
@@ -570,9 +600,11 @@ export default function PlacesPage() {
 
                     <button
                         type="button"
-                        className="places-location-button"
+                        className={`places-location-button ${nearbyMode ? 'active' : ''}`}
                         onClick={loadNearbyPlaces}
                         disabled={locationLoading}
+                        aria-pressed={nearbyMode}
+                        aria-label="내 주변 장소 찾기"
                     >
                         {locationLoading ? (
                             <span>...</span>
@@ -602,7 +634,7 @@ export default function PlacesPage() {
 
             {externalError && !error && (
                 <p className="places-error">
-                    외부 장소 검색: {externalError}
+                    외부 장소 검색 실패: {externalError}
                 </p>
             )}
 

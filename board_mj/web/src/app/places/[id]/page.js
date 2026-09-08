@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import {useParams} from "next/navigation";
-import {useEffect, useState} from "react";
-import {apiFetch} from "@/lib/api";
-import Link from "next/link";
+import {useEffect, useState} from 'react';
+import Link from 'next/link';
+import {useParams} from 'next/navigation';
+import {apiFetch} from '@/lib/api';
 
 const STATUS_LABEL = {
-    quiet: '🟢 여유',
-    normal: '🟡 보통',
-    busy: '🔴 혼잡',
+    quiet: '여유',
+    normal: '보통',
+    busy: '혼잡',
     unknown: '정보 부족'
 };
 
@@ -28,7 +28,7 @@ const TREND_LABEL = {
 
 const CATEGORY_LABEL = {
     cafe: '카페',
-    restaurant: '음식점',
+    restaurant: '맛집',
     bar: '술집',
     popup: '팝업',
     shopping: '쇼핑',
@@ -152,17 +152,17 @@ export default function PlaceDetailPage() {
                 ]);
 
                 setPlace(currentStatusData.place || placeData.place);
-                setItems(nowData.items);
+                setItems(nowData.items || []);
                 setPlaceStatus(currentStatusData.placeStatus);
                 setPlaceStatusHistory(statusHistoryData.items || []);
 
                 const token = localStorage.getItem('token');
 
                 if (token) {
-                    const followData = await  apiFetch('/api/places/followed/me');
+                    const followData = await apiFetch('/api/places/followed/me');
 
                     const following = followData.followedPlaces.some(
-                        followedPlace => followedPlace._id === id
+                        (followedPlace) => followedPlace._id === id
                     );
 
                     setIsFollowing(following);
@@ -180,15 +180,15 @@ export default function PlaceDetailPage() {
     }, [id]);
 
     if (loading) {
-        return <main>불러오는 중...</main>
+        return <main>불러오는 중...</main>;
     }
 
     if (error) {
-        return <main>{error}</main>
+        return <main>{error}</main>;
     }
 
     if (!place) {
-        return <main>장소를 찾을 수 없습니다.</main>
+        return <main>장소를 찾을 수 없습니다.</main>;
     }
 
     const latestPost = items.length > 0 ? items[0] : null;
@@ -283,8 +283,8 @@ export default function PlaceDetailPage() {
 
             setConfirmationMessage(
                 type === 'still_valid'
-                    ? '현재 정보가 유지되는 것으로 확인했어요.'
-                    : '정보가 달라졌다는 확인을 남겼어요.'
+                    ? '현재 정보가 아직 맞는 것으로 확인했어요.'
+                    : '정보가 달라졌다고 확인에 반영했어요.'
             );
         } catch (err) {
             setConfirmationMessage(err.message);
@@ -337,7 +337,13 @@ export default function PlaceDetailPage() {
                             <button
                                 type="button"
                                 className="place-detail-icon-button"
-                                aria-label="알림"
+                                aria-label={
+                                    isFollowing
+                                        ? '관심 장소 해제'
+                                        : '관심 장소 등록'
+                                }
+                                onClick={handleFollow}
+                                disabled={followLoading}
                             >
                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/>
@@ -364,8 +370,8 @@ export default function PlaceDetailPage() {
                     <div className="place-detail-tags">
                         {latestNow && (
                             <span className={`now-status ${latestNow.status}`}>
-                            {STATUS_LABEL[latestNow.status] || latestNow.status}
-                        </span>
+                                {STATUS_LABEL[latestNow.status] || latestNow.status}
+                            </span>
                         )}
 
                         <span className="place-detail-tag">
@@ -388,7 +394,7 @@ export default function PlaceDetailPage() {
                         <p>
                             {hasKnownStatus
                                 ? `${getFreshnessLabel(currentStatus?.freshnessScore)} · ${getConfidenceLabel(currentStatus?.confidenceScore)}`
-                                : '최근 현장 Evidence가 부족해서 현재 상태를 추측하지 않습니다.'}
+                                : '최근 현장 Evidence가 부족해 현재 상태를 추정하지 못했습니다.'}
                         </p>
                     </div>
 
@@ -481,7 +487,7 @@ export default function PlaceDetailPage() {
                     <div className="place-detail-section-head">
                         <div>
                             <h2>최근 현장 인증 사용자</h2>
-                            <p>최근 3시간 내 이 장소에서 인증한 사용자예요.</p>
+                            <p>최근 3시간 안에 이 장소에서 인증한 사용자예요.</p>
                         </div>
                     </div>
 
@@ -539,7 +545,7 @@ export default function PlaceDetailPage() {
                                         />
 
                                         {index < placeStatusHistory.length - 1 && (
-                                            <span className="place-detail-history-rail" />
+                                            <span className="place-detail-history-rail"/>
                                         )}
                                     </div>
 
@@ -590,7 +596,7 @@ export default function PlaceDetailPage() {
                                     <div className="place-detail-author-info">
                                         <div className="place-detail-author-line">
                                             <strong>
-                                                {post.author?.name || '알 수 없음'}
+                                                {post.author?.name || '이름 없음'}
                                             </strong>
 
                                             <span>
@@ -637,7 +643,7 @@ export default function PlaceDetailPage() {
                                             <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
                                             <path d="M5 20a7 7 0 0 1 14 0"/>
                                         </svg>
-                                        현장에 있어요
+                                        현장에 있었어요
                                     </span>
 
                                     <Link

@@ -73,15 +73,18 @@ function isSupportedRegion(address) {
 
 function inferCategory(document) {
     const groupCode = document.category_group_code;
-
-    if (CATEGORY_GROUP_TO_PLACE_CATEGORY[groupCode]) {
-        return CATEGORY_GROUP_TO_PLACE_CATEGORY[groupCode];
-    }
-
     const categoryName = document.category_name || '';
 
     if (categoryName.includes('카페')) {
         return 'cafe';
+    }
+
+    if (
+        categoryName.includes('술집') ||
+        categoryName.includes('호프') ||
+        categoryName.includes('바,칵테일')
+    ) {
+        return 'bar';
     }
 
     if (
@@ -93,14 +96,6 @@ function inferCategory(document) {
         categoryName.includes('양식')
     ) {
         return 'restaurant';
-    }
-
-    if (
-        categoryName.includes('술집') ||
-        categoryName.includes('호프') ||
-        categoryName.includes('바,칵테일')
-    ) {
-        return 'bar';
     }
 
     if (
@@ -125,6 +120,10 @@ function inferCategory(document) {
         categoryName.includes('복합쇼핑몰')
     ) {
         return 'shopping';
+    }
+
+    if (CATEGORY_GROUP_TO_PLACE_CATEGORY[groupCode]) {
+        return CATEGORY_GROUP_TO_PLACE_CATEGORY[groupCode];
     }
 
     return 'other';

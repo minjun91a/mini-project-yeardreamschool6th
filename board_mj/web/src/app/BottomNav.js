@@ -60,27 +60,27 @@ export default function BottomNav() {
         {
             href: '/now',
             label: '홈',
-            icon: <HomeIcon />
+            icon: <HomeIcon/>
         },
         {
             href: '/places',
             label: '장소',
-            icon: <PlaceIcon />
+            icon: <PlaceIcon/>
         },
         {
             href: '/now/write',
             label: 'NOW',
-            icon: <WriteIcon />
+            icon: <WriteIcon/>
         },
         {
             href: '/notifications',
             label: '알림',
-            icon: <BellIcon />
+            icon: <BellIcon/>
         },
         {
             href: '/profile',
             label: '마이',
-            icon: <ProfileIcon />
+            icon: <ProfileIcon/>
         },
     ];
 

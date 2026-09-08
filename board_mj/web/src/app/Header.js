@@ -1,9 +1,9 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {usePathname, useRouter} from 'next/navigation';
 import Link from 'next/link';
-import {apiFetch} from "@/lib/api";
+import {apiFetch} from '@/lib/api';
 
 export default function Header() {
     const router = useRouter();
@@ -69,6 +69,12 @@ export default function Header() {
                         >
                             로그아웃
                         </button>
+
+                        {unreadCount > 0 && (
+                            <span className="notification-badge">
+                                {unreadCount}
+                            </span>
+                        )}
                     </>
                 )}
             </div>

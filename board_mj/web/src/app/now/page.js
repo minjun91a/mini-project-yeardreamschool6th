@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import {useEffect, useState} from "react";
-import {apiFetch} from "@/lib/api";
-import Link from "next/link";
+import {useEffect, useState} from 'react';
+import Link from 'next/link';
+import {apiFetch} from '@/lib/api';
 
 const STATUS_LABEL = {
-    quiet: '🟢 여유',
-    normal: '🟡 보통',
-    busy: '🔴 혼잡',
+    quiet: '여유',
+    normal: '보통',
+    busy: '혼잡',
     unknown: '정보 부족'
 };
 
@@ -20,7 +20,7 @@ const TREND_LABEL = {
 
 const CATEGORY_LABEL = {
     cafe: '카페',
-    restaurant: '음식점',
+    restaurant: '맛집',
     bar: '술집',
     popup: '팝업',
     shopping: '쇼핑',
@@ -30,6 +30,20 @@ const CATEGORY_LABEL = {
     other: '기타',
     etc: '기타',
 };
+
+const CATEGORY_FILTERS = [
+    {value: 'all', label: '전체'},
+    {value: 'cafe', label: '카페'},
+    {value: 'restaurant', label: '맛집'},
+    {value: 'bar', label: '술집'},
+    {value: 'popup', label: '팝업'},
+    {value: 'shopping', label: '쇼핑'},
+    {value: 'culture', label: '문화'},
+];
+
+function getCategoryParam(category) {
+    return category === 'all' ? null : category;
+}
 
 function formatRelativeTime(createdAt) {
     const now = new Date();
@@ -98,37 +112,142 @@ function getEvidenceCount(place) {
         (place.stats?.quickSignalCount || 0);
 }
 
+function toExternalDisplayPlace(place) {
+    if (place.agoPlace) {
+        return {
+            ...place.agoPlace,
+            distance: place.distance,
+            externalPlaceId: place.externalPlaceId,
+            provider: place.provider,
+            isMatchedExternalResult: true
+        };
+    }
+
+    return {
+        _id: `kakao:${place.externalPlaceId}`,
+        externalPlaceId: place.externalPlaceId,
+        provider: place.provider,
+        name: place.name,
+        category: place.category,
+        address: place.roadAddress || place.address,
+        location: place.location,
+        distance: place.distance,
+        currentStatus: {
+            status: 'unknown',
+            confidenceScore: 0,
+            freshnessScore: 0,
+            trend: 'unknown'
+        },
+        stats: {
+            updateCount: 0,
+            quickSignalCount: 0
+        },
+        isExternalResult: true
+    };
+}
+
+function mergeNearbyPlaces(localPlaces, externalPlaces) {
+    const merged = [...localPlaces];
+    const knownIds = new Set(localPlaces.map((place) => String(place._id)));
+
+    externalPlaces
+        .map(toExternalDisplayPlace)
+        .forEach((place) => {
+            if (knownIds.has(String(place._id))) {
+                return;
+            }
+
+            knownIds.add(String(place._id));
+            merged.push(place);
+        });
+
+    return merged;
+}
+
+function buildLiveStatusPath(category) {
+    const params = new URLSearchParams();
+    const categoryParam = getCategoryParam(category);
+
+    if (categoryParam) {
+        params.set('category', categoryParam);
+    }
+
+    const query = params.toString();
+
+    return query
+        ? `/api/places/live-statuses?${query}`
+        : '/api/places/live-statuses';
+}
+
+function buildNearbyPath({longitude, latitude, category}) {
+    const params = new URLSearchParams({
+        longitude: String(longitude),
+        latitude: String(latitude),
+        maxDistance: '3000',
+        includeExternal: 'true'
+    });
+
+    const categoryParam = getCategoryParam(category);
+
+    if (categoryParam) {
+        params.set('category', categoryParam);
+    }
+
+    return `/api/places/nearby?${params}`;
+}
+
 export default function NowPage() {
     const [places, setPlaces] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const [selectedCategory, setSelectedCategory] = useState('all');
     const [placeQuery, setPlaceQuery] = useState('');
     const [placeResults, setPlaceResults] = useState([]);
     const [searchingPlaces, setSearchingPlaces] = useState(false);
 
     const [userLocation, setUserLocation] = useState(null);
     const [nearbyPlaces, setNearbyPlaces] = useState([]);
+    const [nearbyExternalPlaces, setNearbyExternalPlaces] = useState([]);
     const [locationLoading, setLocationLoading] = useState(false);
     const [locationError, setLocationError] = useState('');
+    const [nearbyExternalError, setNearbyExternalError] = useState('');
 
     const [nearbyMode, setNearbyMode] = useState(false);
 
     useEffect(() => {
-        const loadNowFeed = async () => {
-            try {
-                const data = await apiFetch('/api/places/live-statuses');
+        let ignore = false;
 
-                setPlaces(data.places);
+        async function loadNowFeed() {
+            try {
+                setLoading(true);
+                setError('');
+
+                const data = await apiFetch(
+                    buildLiveStatusPath(selectedCategory)
+                );
+
+                if (!ignore) {
+                    setPlaces(data.places || []);
+                }
             } catch (err) {
-                setError(err.message);
+                if (!ignore) {
+                    setError(err.message);
+                    setPlaces([]);
+                }
             } finally {
-                setLoading(false);
+                if (!ignore) {
+                    setLoading(false);
+                }
             }
-        };
+        }
 
         loadNowFeed();
-    }, []);
+
+        return () => {
+            ignore = true;
+        };
+    }, [selectedCategory]);
 
     useEffect(() => {
         if (!placeQuery.trim()) {
@@ -156,14 +275,61 @@ export default function NowPage() {
         return () => clearTimeout(timer);
     }, [placeQuery]);
 
+    useEffect(() => {
+        if (!nearbyMode || !userLocation) {
+            return;
+        }
+
+        let ignore = false;
+
+        async function reloadNearbyPlaces() {
+            try {
+                setLocationLoading(true);
+                setLocationError('');
+                setNearbyExternalError('');
+
+                const data = await apiFetch(
+                    buildNearbyPath({
+                        longitude: userLocation.longitude,
+                        latitude: userLocation.latitude,
+                        category: selectedCategory
+                    })
+                );
+
+                if (!ignore) {
+                    setNearbyPlaces(data.places || []);
+                    setNearbyExternalPlaces(data.externalPlaces || []);
+                    setNearbyExternalError(data.externalError?.message || '');
+                }
+            } catch (err) {
+                if (!ignore) {
+                    setLocationError(err.message);
+                    setNearbyPlaces([]);
+                    setNearbyExternalPlaces([]);
+                }
+            } finally {
+                if (!ignore) {
+                    setLocationLoading(false);
+                }
+            }
+        }
+
+        reloadNearbyPlaces();
+
+        return () => {
+            ignore = true;
+        };
+    }, [nearbyMode, selectedCategory, userLocation]);
+
     function loadCurrentLocation() {
         if (!navigator.geolocation) {
-            setLocationError('현재 브라우저에서는 위치 정보를 사용할 수 없습니다.');
+            setLocationError('현재 브라우저에서 위치 정보를 사용할 수 없습니다.');
             return;
         }
 
         setLocationLoading(true);
         setLocationError('');
+        setNearbyExternalError('');
 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
@@ -177,20 +343,28 @@ export default function NowPage() {
 
                 try {
                     const data = await apiFetch(
-                        `/api/places/nearby?longitude=${longitude}&latitude=${latitude}&maxDistance=3000`
+                        buildNearbyPath({
+                            longitude,
+                            latitude,
+                            category: selectedCategory
+                        })
                     );
 
                     setNearbyPlaces(data.places || []);
+                    setNearbyExternalPlaces(data.externalPlaces || []);
+                    setNearbyExternalError(data.externalError?.message || '');
                     setNearbyMode(true);
                 } catch (err) {
                     setLocationError(err.message);
+                    setNearbyExternalPlaces([]);
+                    setNearbyExternalError('');
                 } finally {
                     setLocationLoading(false);
                 }
             },
 
-            (error) => {
-                if (error.code === 1) {
+            (geoError) => {
+                if (geoError.code === 1) {
                     setLocationError('위치 권한이 필요합니다.');
                 } else {
                     setLocationError('현재 위치를 가져오지 못했습니다.');
@@ -215,24 +389,22 @@ export default function NowPage() {
         return place?.distance ?? null;
     }
 
-    function formatDistance(distance) {
-        if (distance == null) {
-            return null;
-        }
+function formatDistance(distance) {
+    const value = Number(distance);
 
-        if (distance < 1000) {
-            return `${Math.round(distance)}m`;
-        }
-
-        return `${(distance / 1000).toFixed(1)}km`
+    if (!Number.isFinite(value)) {
+        return null;
     }
 
+    if (value < 1000) {
+        return `${Math.round(value)}m`;
+    }
+
+    return `${(value / 1000).toFixed(1)}km`;
+}
+
     const visiblePlaces = nearbyMode
-        ? places.filter((place) =>
-            nearbyPlaces.some(
-                (nearbyPlace) => nearbyPlace._id === place._id
-            )
-        )
+        ? mergeNearbyPlaces(nearbyPlaces, nearbyExternalPlaces)
         : places;
 
     if (loading) {
@@ -253,10 +425,12 @@ export default function NowPage() {
 
                     <button
                         type="button"
-                        className="home-now-location"
+                        className={`home-now-location ${nearbyMode ? 'active' : ''}`}
+                        aria-pressed={nearbyMode}
                         onClick={() => {
                             if (nearbyMode) {
                                 setNearbyMode(false);
+                                setNearbyExternalError('');
                                 return;
                             }
 
@@ -264,7 +438,7 @@ export default function NowPage() {
                         }}
                         disabled={locationLoading}
                     >
-                        <span className="home-now-location-arrow">‹</span>
+                        <span className="home-now-location-arrow">⌖</span>
 
                         <span className="home-now-location-label">
                             내 위치
@@ -278,7 +452,7 @@ export default function NowPage() {
                             {locationLoading
                                 ? '확인 중'
                                 : nearbyMode
-                                    ? '내 주변'
+                                    ? '주변 ON'
                                     : '주변'}
                         </strong>
 
@@ -292,12 +466,20 @@ export default function NowPage() {
                 </header>
 
                 <div className="home-now-categories">
-                    <button className="active">전체</button>
-                    <button>카페</button>
-                    <button>맛집</button>
-                    <button>편의점</button>
-                    <button>주차</button>
-                    <button>문화</button>
+                    {CATEGORY_FILTERS.map((category) => (
+                        <button
+                            key={category.value}
+                            type="button"
+                            className={
+                                selectedCategory === category.value
+                                    ? 'active'
+                                    : ''
+                            }
+                            onClick={() => setSelectedCategory(category.value)}
+                        >
+                            {category.label}
+                        </button>
+                    ))}
                 </div>
 
                 <section className="home-now-search">
@@ -324,6 +506,12 @@ export default function NowPage() {
                     </p>
                 )}
 
+                {nearbyExternalError && nearbyMode && !locationError && (
+                    <p className="home-now-error">
+                        Kakao 주변 장소를 불러오지 못했습니다: {nearbyExternalError}
+                    </p>
+                )}
+
                 {placeQuery.trim() ? (
                     <section className="home-now-search-results">
                         {searchingPlaces && (
@@ -334,7 +522,7 @@ export default function NowPage() {
 
                         {!searchingPlaces && placeResults.length === 0 && (
                             <div className="home-now-empty">
-                                검색 결과가 없어요.
+                                검색 결과가 없습니다.
                             </div>
                         )}
 
@@ -350,10 +538,10 @@ export default function NowPage() {
                                             <strong>{place.name}</strong>
 
                                             <span>
-                                            {CATEGORY_LABEL[place.category] || place.category}
+                                                {CATEGORY_LABEL[place.category] || place.category}
                                                 {' · '}
                                                 {place.address}
-                                        </span>
+                                            </span>
                                         </div>
 
                                         <span>›</span>
@@ -367,12 +555,13 @@ export default function NowPage() {
                         {visiblePlaces.length === 0 && (
                             <div className="home-now-empty">
                                 {nearbyMode
-                                    ? '주변에 계산된 최신 장소 상황이 없어요.'
-                                    : '아직 계산된 장소 상황이 없어요.'}
+                                    ? '주변에 계산된 최신 장소 상황이 없습니다.'
+                                    : '아직 계산된 장소 상황이 없습니다.'}
                             </div>
                         )}
 
                         {visiblePlaces.map((place) => {
+                            const isExternalResult = place.isExternalResult;
                             const currentStatus =
                                 place.currentStatus || {};
                             const status = currentStatus.status || 'unknown';
@@ -381,26 +570,35 @@ export default function NowPage() {
                                 currentStatus.freshnessScore
                             );
 
-                            const distance = place._id
-                                ? getPlaceDistance(place._id)
-                                : null;
+                            const distance = nearbyMode
+                                ? place.distance
+                                : getPlaceDistance(place._id);
 
                             const distanceText = formatDistance(distance);
+                            const detailHref = isExternalResult
+                                ? '/places'
+                                : `/places/${place._id}`;
 
                             return (
                                 <article
                                     key={place._id}
-                                    className="home-now-card"
+                                    className={`home-now-card ${isExternalResult ? 'external' : ''}`}
                                 >
                                     <div className="home-now-card-head">
                                         <div className="home-now-place">
                                             <span className="home-now-pin">●</span>
 
-                                            <Link href={`/places/${place._id}`}>
+                                            {isExternalResult ? (
                                                 <strong>
                                                     {place.name}
                                                 </strong>
-                                            </Link>
+                                            ) : (
+                                                <Link href={detailHref}>
+                                                    <strong>
+                                                        {place.name}
+                                                    </strong>
+                                                </Link>
+                                            )}
 
                                             {distanceText && (
                                                 <small>{distanceText}</small>
@@ -422,6 +620,12 @@ export default function NowPage() {
                                         {place.category && (
                                             <span className="home-now-tag">
                                                 {CATEGORY_LABEL[place.category] || place.category}
+                                            </span>
+                                        )}
+
+                                        {isExternalResult && (
+                                            <span className="home-now-tag">
+                                                Kakao
                                             </span>
                                         )}
 
@@ -452,14 +656,16 @@ export default function NowPage() {
                                             </span>
 
                                             <Link
-                                                href={`/places/${place._id}`}
+                                                href={detailHref}
                                                 className="home-now-action"
                                             >
                                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                                     <path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
                                                 </svg>
 
-                                                장소 상황 보기
+                                                {isExternalResult
+                                                    ? '장소에서 보기'
+                                                    : '장소 상황 보기'}
                                             </Link>
                                         </div>
 

@@ -1,52 +1,16 @@
 'use client';
 
-import {useEffect, useState} from "react";
+import {useEffect, useState} from 'react';
 import {
     MapContainer,
     TileLayer,
     Popup,
-    CircleMarker,
+    Marker,
     useMap,
 } from 'react-leaflet';
+import L from 'leaflet';
 
 import 'leaflet/dist/leaflet.css';
-
-function MapCenter({position}) {
-    const map = useMap();
-
-    useEffect(() => {
-        if (!position) {
-            return;
-        }
-
-        map.setView(
-            [position.latitude, position.longitude],
-            15
-        );
-    }, [position, map]);
-
-    return null;
-}
-
-function PlacesCenter({places}) {
-    const map = useMap();
-
-    useEffect(() => {
-        if (places.length === 0) {
-            return;
-        }
-
-        const position = getPlacePosition(places[0]);
-
-        if (!position) {
-            return;
-        }
-
-        map.setView(position, 15);
-    }, [places, map]);
-
-    return null;
-}
 
 function getPlacePosition(place) {
     const coordinates = place?.location?.coordinates;
@@ -67,31 +31,77 @@ function getPlacePosition(place) {
     return [latitude, longitude];
 }
 
-function getStatusColor(status) {
-    if (status === 'quiet') {
-        return '#3C7135';
-    }
+function MapViewport({places, userLocation, selectedPlace}) {
+    const map = useMap();
 
-    if (status === 'normal') {
-        return '#8C6B00';
-    }
+    useEffect(() => {
+        const selectedPosition = getPlacePosition(selectedPlace);
 
-    if (status === 'busy') {
-        return '#A34038';
-    }
+        if (selectedPosition) {
+            map.setView(selectedPosition, 16);
+            return;
+        }
 
-    return '#A4A49B';
+        const positions = places
+            .map(getPlacePosition)
+            .filter(Boolean);
+
+        if (userLocation) {
+            positions.unshift([
+                userLocation.latitude,
+                userLocation.longitude
+            ]);
+        }
+
+        if (positions.length === 0) {
+            return;
+        }
+
+        if (positions.length === 1) {
+            map.setView(positions[0], 15);
+            return;
+        }
+
+        map.fitBounds(positions, {
+            padding: [36, 36],
+            maxZoom: 15
+        });
+    }, [places, userLocation, selectedPlace, map]);
+
+    return null;
 }
 
-function getMarkerRadius(place, selectedPlace) {
-    if (selectedPlace?._id === place._id) {
-        return 12;
-    }
+function getPinStatus(place) {
+    return place.currentStatus?.status || 'unknown';
+}
 
-    return place.currentStatus?.status === 'unknown' ||
-        !place.currentStatus?.status
-        ? 7
-        : 10;
+function createPlaceIcon({place, selectedPlace}) {
+    const status = getPinStatus(place);
+    const selected = selectedPlace?._id === place._id;
+    const external = place.isExternalResult;
+
+    return L.divIcon({
+        className: [
+            'places-map-pin',
+            `status-${status}`,
+            selected ? 'selected' : '',
+            external ? 'external' : ''
+        ].filter(Boolean).join(' '),
+        html: '<span></span>',
+        iconSize: selected ? [34, 42] : [28, 36],
+        iconAnchor: selected ? [17, 40] : [14, 34],
+        popupAnchor: [0, -34]
+    });
+}
+
+function createUserLocationIcon() {
+    return L.divIcon({
+        className: 'places-map-pin user-location',
+        html: '<span></span>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -16]
+    });
 }
 
 function MapResizeFix() {
@@ -114,7 +124,6 @@ export default function PlacesMap({
     selectedPlace,
     onSelectPlace,
 }) {
-
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -124,7 +133,7 @@ export default function PlacesMap({
     if (!mounted) {
         return (
             <div className="places-map-loading">
-                지도 불러오는 중...
+                지도를 불러오는 중...
             </div>
         );
     }
@@ -143,28 +152,23 @@ export default function PlacesMap({
 
             <MapResizeFix/>
 
-            <PlacesCenter places={places} />
+            <MapViewport
+                places={places}
+                userLocation={userLocation}
+                selectedPlace={selectedPlace}
+            />
 
             {userLocation && (
-                <>
-                    <MapCenter position={userLocation}/>
-
-                    <CircleMarker
-                        center={[
-                            userLocation.latitude,
-                            userLocation.longitude,
-                        ]}
-                        radius={9}
-                        pathOptions={{
-                            color: '#FFFFFF',
-                            fillColor: '#148F3D',
-                            fillOpacity: 1,
-                            weight: 3,
-                        }}
-                    >
-                        <Popup>현재 위치</Popup>
-                    </CircleMarker>
-                </>
+                <Marker
+                    position={[
+                        userLocation.latitude,
+                        userLocation.longitude,
+                    ]}
+                    icon={createUserLocationIcon()}
+                    zIndexOffset={1000}
+                >
+                    <Popup>현재 위치</Popup>
+                </Marker>
             )}
 
             {places.map((place) => {
@@ -175,31 +179,19 @@ export default function PlacesMap({
                 }
 
                 return (
-                    <CircleMarker
+                    <Marker
                         key={place._id}
-                        center={position}
-                        radius={getMarkerRadius(place, selectedPlace)}
-                        pathOptions={{
-                            color:
-                                selectedPlace?._id === place._id
-                                    ? '#1F1F1F'
-                                    : '#FFFFFF',
-                            fillColor:
-                                selectedPlace?._id === place._id
-                                    ? '#C6F047'
-                                    : getStatusColor(
-                                        place.currentStatus?.status
-                                    ),
-                            fillOpacity: place.currentStatus?.status &&
-                                place.currentStatus.status !== 'unknown'
-                                ? 1
-                                : 0.45,
-                            weight: 3,
-                        }}
+                        position={position}
+                        icon={createPlaceIcon({place, selectedPlace})}
+                        zIndexOffset={
+                            selectedPlace?._id === place._id ? 500 : 0
+                        }
                         eventHandlers={{
                             click: () => onSelectPlace(place),
                         }}
-                    />
+                    >
+                        <Popup>{place.name}</Popup>
+                    </Marker>
                 );
             })}
         </MapContainer>
