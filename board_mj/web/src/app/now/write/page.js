@@ -1,7 +1,7 @@
 'use client'
 
 import {useRouter, useSearchParams} from "next/navigation";
-import {useEffect, useState} from "react";
+import {Suspense, useEffect, useState} from "react";
 import {apiFetch} from "@/lib/api";
 
 const STATUS_OPTIONS = [
@@ -11,6 +11,24 @@ const STATUS_OPTIONS = [
 ];
 
 export default function NowWritePage() {
+    return (
+        <Suspense
+            fallback={
+                <main className="now-write-page">
+                    <section className="now-write-compose">
+                        <p className="now-write-search-message">
+                            불러오는 중...
+                        </p>
+                    </section>
+                </main>
+            }
+        >
+            <NowWriteContent />
+        </Suspense>
+    );
+}
+
+function NowWriteContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialPlaceId = searchParams.get('placeId');

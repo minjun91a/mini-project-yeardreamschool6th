@@ -1959,6 +1959,9 @@ main {
 
     margin: 0 auto;
     padding: 0 0 90px;
+
+    border-left: 1px solid var(--ago-border);
+    border-right: 1px solid var(--ago-border);
 }
 
 .now-write-compose {
@@ -1968,8 +1971,6 @@ main {
 
     background: var(--ago-surface);
 
-    border-left: 1px solid var(--ago-border);
-    border-right: 1px solid var(--ago-border);
     border-bottom: 1px solid var(--ago-border);
 }
 
@@ -2498,29 +2499,6 @@ main {
 }
 
 
-/* ---------- MOBILE ---------- */
-
-@media (max-width: 480px) {
-
-    .now-write-page {
-        max-width: 100%;
-    }
-
-    .now-write-compose {
-        border-left: 0;
-        border-right: 0;
-        border-bottom: 0;
-    }
-
-    .now-write-question {
-        font-size: 17px;
-    }
-
-    .now-write-content-section {
-        min-height: 220px;
-    }
-}
-
 /* =========================================================
    10. NOTIFICATIONS
 ========================================================= */
@@ -3036,21 +3014,6 @@ main {
     font-size: 9px;
 }
 
-/* ---------- MOBILE ---------- */
-
-@media (max-width: 480px) {
-
-    .profile-page {
-        max-width: 100%;
-    }
-
-    .profile-card {
-        border-left: 0;
-        border-right: 0;
-        border-radius: 0;
-    }
-}
-
 /* =========================================================
    11. LEGACY BOARD
 ========================================================= */
@@ -3542,6 +3505,8 @@ main {
 
 @media (max-width: 480px) {
 
+    /* ---------- GLOBAL HEADER ---------- */
+
     .site-header {
         gap: 10px;
     }
@@ -3558,10 +3523,22 @@ main {
         padding: 0 8px;
     }
 
-    .home-now-shell,
+
+    /* ---------- HOME / PLACES ---------- */
+
     .places-page {
         max-width: 100%;
     }
+
+    .home-now-shell {
+        width: calc(100% - 28px);
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+
+    /* ---------- PLACE DETAIL ---------- */
 
     .place-detail-shell {
         max-width: 100%;
@@ -3569,6 +3546,33 @@ main {
         border-left: 0;
         border-right: 0;
         border-radius: 0;
+    }
+
+
+    /* ---------- NOW WRITE ---------- */
+
+    .now-write-page {
+        max-width: 100%;
+    }
+
+    .now-write-question {
+        font-size: 17px;
+    }
+
+    .now-write-content-section {
+        min-height: 220px;
+    }
+
+
+    /* ---------- PROFILE ---------- */
+
+    .profile-page {
+        max-width: 100%;
+    }
+
+    .profile-card {
+        border-left: 1px solid var(--ago-border);
+        border-right: 1px solid var(--ago-border);
     }
 }
 
