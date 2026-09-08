@@ -28,6 +28,7 @@ app.use('/api/place-updates', require('./routes/placeUpdates'));
 app.use('/api/quick-signals', require('./routes/quickSignals'));
 app.use('/api/confirmations', require('./routes/confirmations'));
 app.use('/api/place-follows', require('./routes/placeFollows'));
+app.use('/api/presence-signals', require('./routes/presenceSignals'));
 app.use('/api/place-statuses', require('./routes/placeStatuses'));
 app.use('/api/places', require('./routes/places'));
 app.use('/api/notifications', require('./routes/notifications'));

@@ -112,6 +112,8 @@ Base URL: `http://localhost`
 | GET | `/api/place-follows/count` | - | `?place` | 200 `{count}` | 400 |
 | POST | `/api/place-follows` | ✔ | `{placeId, notificationPreferences?}` | 201/200 `{placeFollow, created}` | 400, 401, 404 |
 | DELETE | `/api/place-follows/:placeId` | ✔ | - | 200 `{deletedPlaceId}` | 400, 401 |
+| GET | `/api/presence-signals/nearby` | ✔ | `?longitude&latitude&radius&limit` | 200 `{places, kakaoPlaces, externalError}` | 400, 401 |
+| POST | `/api/presence-signals` | ✔ | `{placeId, longitude, latitude, accuracy?, observedAt?}` | 201 `{presenceSignal, placeStatus}` | 400, 401, 404 |
 
 - `PlaceUpdate`는 `Post(kind='now')`를 대체하는 장소 중심 Evidence 모델이다.
 - 필수 입력은 `placeId + status`이며, `content`, `originalText`, `image`는 선택이다.
@@ -125,6 +127,8 @@ Base URL: `http://localhost`
 - 새 현장 Evidence가 생성되면 deterministic Core Engine v1이 `PlaceStatus`를 생성하고 `Place.currentStatus` snapshot을 갱신한다.
 - `PlaceFollow`는 `User.followedPlaces[]`를 대체하는 독립 모델이며 관심 장소와 상태 변화 알림의 기준이다.
 - 사람 팔로우 API는 `410 USER_FOLLOW_REMOVED`로 응답한다.
+- `PresenceSignal`은 개인 이동 기록이 아니라 짧은 TTL의 장소 단위 active signal이다. 원본 좌표는 저장하지 않고 거리/정확도/만료 시간만 저장한다.
+- `PresenceSignal`은 Core Engine에서 약한 evidence로만 반영되며, `PlaceUpdate`나 `QuickSignal`보다 낮은 trust를 갖는다.
 - 기존 now post 백필은 `node src/scripts/migrateNowPostsToPlaceUpdates.js`로 실행한다. 이 스크립트는 `legacyPost` 기준으로 중복을 방지한다.
 - Confirmation index를 partial unique 구조로 동기화하려면 `node src/scripts/syncConfirmationIndexes.js`를 실행한다.
 - 기존 `User.followedPlaces[]` 데이터는 `node src/scripts/migrateUserFollowedPlacesToPlaceFollows.js`로 `PlaceFollow`에 백필한다.

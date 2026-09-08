@@ -148,6 +148,11 @@ const statsSchema = new mongoose.Schema(
         lastSignalAt: {
             type: Date,
             default: null
+        },
+
+        lastPresenceAt: {
+            type: Date,
+            default: null
         }
     },
     {_id: false}

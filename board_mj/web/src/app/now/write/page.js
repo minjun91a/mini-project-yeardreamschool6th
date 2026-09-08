@@ -51,6 +51,12 @@ function NowWriteContent() {
     const [linkingPlaceId, setLinkingPlaceId] = useState('');
     const [error, setError] = useState('');
     const [externalError, setExternalError] = useState('');
+    const [currentPosition, setCurrentPosition] = useState(null);
+    const [locatingPlaces, setLocatingPlaces] = useState(false);
+    const [nearbyPlaces, setNearbyPlaces] = useState([]);
+    const [nearbyExternalPlaces, setNearbyExternalPlaces] = useState([]);
+    const [presenceSubmitting, setPresenceSubmitting] = useState(false);
+    const [presenceMessage, setPresenceMessage] = useState('');
 
     useEffect(() => {
         const loadInitialPlace = async () => {
@@ -126,6 +132,61 @@ function NowWriteContent() {
         }
     };
 
+    const getCurrentPosition = async () => {
+        if (!navigator.geolocation) {
+            throw new Error('현재 위치를 사용할 수 없습니다.');
+        }
+
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                resolve,
+                reject,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        });
+
+        const nextPosition = {
+            longitude: position.coords.longitude,
+            latitude: position.coords.latitude,
+            accuracy: position.coords.accuracy
+        };
+
+        setCurrentPosition(nextPosition);
+
+        return nextPosition;
+    };
+
+    const handleNearbyPlaceSearch = async () => {
+        try {
+            setLocatingPlaces(true);
+            setError('');
+            setExternalError('');
+            setPresenceMessage('');
+
+            const position = await getCurrentPosition();
+            const data = await apiFetch(
+                `/api/presence-signals/nearby?longitude=${position.longitude}&latitude=${position.latitude}&radius=500&limit=8`
+            );
+
+            setNearbyPlaces(data.places || []);
+            setNearbyExternalPlaces(data.kakaoPlaces || []);
+
+            if (data.externalError) {
+                setExternalError(data.externalError.message);
+            }
+        } catch (err) {
+            setError(err.message);
+            setNearbyPlaces([]);
+            setNearbyExternalPlaces([]);
+        } finally {
+            setLocatingPlaces(false);
+        }
+    };
+
     useEffect(() => {
         if (selectedPlace) {
             return;
@@ -181,6 +242,9 @@ function NowWriteContent() {
             setPlaceQuery(externalPlace.agoPlace.name);
             setPlaceResults([]);
             setExternalPlaceResults([]);
+            setNearbyPlaces([]);
+            setNearbyExternalPlaces([]);
+            setPresenceMessage('');
             return;
         }
 
@@ -200,10 +264,44 @@ function NowWriteContent() {
             setPlaceQuery(data.place.name);
             setPlaceResults([]);
             setExternalPlaceResults([]);
+            setNearbyPlaces([]);
+            setNearbyExternalPlaces([]);
+            setPresenceMessage('');
         } catch (err) {
             setError(err.message);
         } finally {
             setLinkingPlaceId('');
+        }
+    };
+
+    const submitPresenceSignal = async () => {
+        if (!placeId) {
+            setError('장소를 선택해주세요.');
+            return;
+        }
+
+        try {
+            setPresenceSubmitting(true);
+            setError('');
+            setPresenceMessage('');
+
+            const position = currentPosition || await getCurrentPosition();
+
+            await apiFetch('/api/presence-signals', {
+                method: 'POST',
+                body: JSON.stringify({
+                    placeId,
+                    longitude: position.longitude,
+                    latitude: position.latitude,
+                    accuracy: position.accuracy
+                })
+            });
+
+            setPresenceMessage('현재 장소 신호가 반영됐습니다.');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setPresenceSubmitting(false);
         }
     };
 
@@ -225,25 +323,14 @@ function NowWriteContent() {
         try {
             setSubmitting(true);
 
-            let longitude = null;
-            let latitude = null;
+            let longitude = currentPosition?.longitude ?? null;
+            let latitude = currentPosition?.latitude ?? null;
 
-            if (navigator.geolocation) {
+            if (longitude === null && navigator.geolocation) {
                 try {
-                    const position = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(
-                            resolve,
-                            reject,
-                            {
-                                enableHighAccuracy: true,
-                                timeout: 10000,
-                                maximumAge: 60000
-                            }
-                        );
-                    });
-
-                    longitude = position.coords.longitude;
-                    latitude = position.coords.latitude;
+                    const position = await getCurrentPosition();
+                    longitude = position.longitude;
+                    latitude = position.latitude;
                 } catch (locationError) {
                     console.warn('위치 정보를 가져오지 못했습니다.', locationError);
                 }
@@ -359,15 +446,87 @@ function NowWriteContent() {
                                     setPlaceQuery(value);
                                     setSelectedPlace(null);
                                     setPlaceId('');
+                                    setNearbyPlaces([]);
+                                    setNearbyExternalPlaces([]);
+                                    setPresenceMessage('');
                                 }}
                                 placeholder="장소 이름이나 주소를 검색하세요"
                                 disabled={loading}
                             />
 
+                            <button
+                                type="button"
+                                className="now-write-location-button"
+                                onClick={handleNearbyPlaceSearch}
+                                disabled={locatingPlaces || loading}
+                            >
+                                {locatingPlaces
+                                    ? '주변 장소 찾는 중...'
+                                    : '내 주변 장소 찾기'}
+                            </button>
+
                             {searchingPlaces && (
                                 <p className="now-write-search-message">
                                     장소 검색 중...
                                 </p>
+                            )}
+
+                            {(nearbyPlaces.length > 0 ||
+                                nearbyExternalPlaces.length > 0) && (
+                                <div className="place-search-results">
+                                    {nearbyPlaces.map((place) => (
+                                        <button
+                                            key={`nearby:${place._id}`}
+                                            type="button"
+                                            className="place-search-item"
+                                            onClick={() => {
+                                                setSelectedPlace(place);
+                                                setPlaceId(place._id);
+                                                setPlaceQuery(place.name);
+                                                setPlaceResults([]);
+                                                setExternalPlaceResults([]);
+                                                setNearbyPlaces([]);
+                                                setNearbyExternalPlaces([]);
+                                                setPresenceMessage('');
+                                            }}
+                                        >
+                                            <strong>{place.name}</strong>
+                                            <span>{place.address}</span>
+                                        </button>
+                                    ))}
+
+                                    {nearbyExternalPlaces
+                                        .filter((place) => {
+                                            return !nearbyPlaces.some(
+                                                (internalPlace) => {
+                                                    return internalPlace._id ===
+                                                        place.agoPlace?._id;
+                                                }
+                                            );
+                                        })
+                                        .map((place) => (
+                                            <button
+                                                key={`nearby-kakao:${place.externalPlaceId}`}
+                                                type="button"
+                                                className="place-search-item"
+                                                onClick={() => selectExternalPlace(place)}
+                                                disabled={
+                                                    linkingPlaceId ===
+                                                    place.externalPlaceId
+                                                }
+                                            >
+                                                <strong>
+                                                    {place.name}
+                                                    {' '}
+                                                    <small>Kakao</small>
+                                                </strong>
+                                                <span>
+                                                    {place.roadAddress ||
+                                                        place.address}
+                                                </span>
+                                            </button>
+                                        ))}
+                                </div>
                             )}
 
                             {(placeResults.length > 0 ||
@@ -383,6 +542,10 @@ function NowWriteContent() {
                                                 setPlaceId(place._id);
                                                 setPlaceQuery(place.name);
                                                 setPlaceResults([]);
+                                                setExternalPlaceResults([]);
+                                                setNearbyPlaces([]);
+                                                setNearbyExternalPlaces([]);
+                                                setPresenceMessage('');
                                             }}
                                         >
                                             <strong>{place.name}</strong>
@@ -431,14 +594,16 @@ function NowWriteContent() {
                             )}
                         </>
                     ) : (
-                        <button
-                            type="button"
-                            className="now-write-selected-place"
-                            onClick={() => {
-                                setSelectedPlace(null);
-                                setPlaceId('');
-                            }}
-                        >
+                        <>
+                            <button
+                                type="button"
+                                className="now-write-selected-place"
+                                onClick={() => {
+                                    setSelectedPlace(null);
+                                    setPlaceId('');
+                                    setPresenceMessage('');
+                                }}
+                            >
                         <span className="now-write-place-pin">
                             <svg
                                 viewBox="0 0 24 24"
@@ -459,7 +624,25 @@ function NowWriteContent() {
                             <span className="now-write-place-change">
                             변경
                         </span>
-                        </button>
+                            </button>
+
+                            <button
+                                type="button"
+                                className="now-write-presence-button"
+                                onClick={submitPresenceSignal}
+                                disabled={presenceSubmitting}
+                            >
+                                {presenceSubmitting
+                                    ? '반영 중...'
+                                    : '이 장소에 있어요'}
+                            </button>
+
+                            {presenceMessage && (
+                                <p className="now-write-search-message">
+                                    {presenceMessage}
+                                </p>
+                            )}
+                        </>
                     )}
                 </section>
 

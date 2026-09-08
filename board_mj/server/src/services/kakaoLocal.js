@@ -298,8 +298,155 @@ async function searchKeyword({
     };
 }
 
+async function searchCategory({
+    categoryGroupCode,
+    longitude,
+    latitude,
+    radius,
+    page,
+    size,
+    sort,
+    includeUnsupported = false
+}) {
+    requireFetch();
+
+    const restApiKey = getRestApiKey();
+
+    if (!restApiKey) {
+        const error = new Error('Kakao Local REST API 키가 설정되어 있지 않습니다.');
+        error.status = 503;
+        error.code = 'KAKAO_API_KEY_MISSING';
+        throw error;
+    }
+
+    if (typeof categoryGroupCode !== 'string' || !categoryGroupCode.trim()) {
+        const error = new Error('카테고리 그룹 코드가 필요합니다.');
+        error.status = 400;
+        error.code = 'CATEGORY_GROUP_CODE_REQUIRED';
+        throw error;
+    }
+
+    const normalizedLongitude = parseNumber(longitude);
+    const normalizedLatitude = parseNumber(latitude);
+
+    assertValidCoordinates({
+        longitude: normalizedLongitude,
+        latitude: normalizedLatitude
+    });
+
+    if (
+        !Number.isFinite(normalizedLongitude) ||
+        !Number.isFinite(normalizedLatitude)
+    ) {
+        const error = new Error('주변 장소 검색에는 좌표가 필요합니다.');
+        error.status = 400;
+        error.code = 'COORDINATES_REQUIRED';
+        throw error;
+    }
+
+    const params = new URLSearchParams({
+        category_group_code: categoryGroupCode.trim(),
+        x: String(normalizedLongitude),
+        y: String(normalizedLatitude),
+        radius: String(clampInteger(radius, {
+            defaultValue: 500,
+            min: 1,
+            max: 20000
+        })),
+        page: String(clampInteger(page, {
+            defaultValue: 1,
+            min: 1,
+            max: 45
+        })),
+        size: String(clampInteger(size, {
+            defaultValue: 15,
+            min: 1,
+            max: 15
+        }))
+    });
+
+    if (sort === 'distance' || sort === 'accuracy') {
+        params.set('sort', sort);
+    }
+
+    const response = await fetch(
+        `${KAKAO_LOCAL_BASE_URL}/v2/local/search/category.json?${params}`,
+        {
+            headers: {
+                Authorization: `KakaoAK ${restApiKey}`
+            }
+        }
+    );
+
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        const error = new Error(
+            body?.msg || 'Kakao Local 주변 장소 검색에 실패했습니다.'
+        );
+
+        error.status = response.status;
+        error.code = 'KAKAO_LOCAL_ERROR';
+        error.details = body;
+        throw error;
+    }
+
+    const places = (body.documents || [])
+        .map(normalizeKakaoPlace)
+        .filter((place) => {
+            return includeUnsupported || place.withinServiceArea;
+        });
+
+    return {
+        meta: body.meta,
+        places
+    };
+}
+
+async function searchNearbyCategories({
+    categoryGroupCodes = ['CE7', 'FD6', 'CT1', 'AT4'],
+    longitude,
+    latitude,
+    radius,
+    size,
+    includeUnsupported = false
+}) {
+    const results = await Promise.all(
+        categoryGroupCodes.map((categoryGroupCode) => {
+            return searchCategory({
+                categoryGroupCode,
+                longitude,
+                latitude,
+                radius,
+                size,
+                sort: 'distance',
+                includeUnsupported
+            });
+        })
+    );
+
+    const seen = new Set();
+
+    return results
+        .flatMap((result) => result.places)
+        .filter((place) => {
+            if (seen.has(place.externalPlaceId)) {
+                return false;
+            }
+
+            seen.add(place.externalPlaceId);
+            return true;
+        })
+        .sort((a, b) => {
+            return (a.distance ?? Number.MAX_SAFE_INTEGER) -
+                (b.distance ?? Number.MAX_SAFE_INTEGER);
+        });
+}
+
 module.exports = {
     normalizeKakaoPlace,
     normalizeText,
+    searchCategory,
+    searchNearbyCategories,
     searchKeyword
 };

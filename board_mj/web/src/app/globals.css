@@ -2397,6 +2397,48 @@ main {
             0 0 0 3px rgba(198, 240, 71, 0.12);
 }
 
+.now-write-location-button,
+.now-write-presence-button {
+    width: 100%;
+    min-height: 38px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 8px;
+    padding: 0 12px;
+
+    background: #F7F7F2;
+    color: var(--ago-text);
+
+    border: 1px solid var(--ago-border);
+    border-radius: 10px;
+
+    font-size: 11px;
+    font-weight: 850;
+}
+
+.now-write-location-button:hover,
+.now-write-presence-button:hover {
+    background: #F3F4EC;
+}
+
+.now-write-location-button:disabled,
+.now-write-presence-button:disabled {
+    color: var(--ago-subtle);
+
+    opacity: 0.65;
+    cursor: default;
+}
+
+.now-write-presence-button {
+    background: #F1F8D8;
+    color: var(--ago-green);
+
+    border-color: rgba(71, 131, 23, 0.18);
+}
+
 .now-write-search-message {
     margin: 7px 2px 0;
 

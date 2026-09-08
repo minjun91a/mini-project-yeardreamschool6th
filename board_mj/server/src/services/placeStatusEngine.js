@@ -3,6 +3,7 @@ const Place = require('../models/place');
 const PlaceUpdate = require('../models/placeUpdate');
 const QuickSignal = require('../models/quickSignal');
 const Confirmation = require('../models/confirmation');
+const PresenceSignal = require('../models/presenceSignal');
 const PlaceStatus = require('../models/placeStatus');
 const {
     createPlaceStatusChangeNotifications
@@ -55,6 +56,10 @@ function getFreshnessScore(observedAt, now) {
 }
 
 function getEvidenceTrust(evidence, type) {
+    if (type === 'PresenceSignal') {
+        return 0.35;
+    }
+
     const baseTrust = type === 'PlaceUpdate' ? 1 : 0.75;
     const verificationBonus = evidence.visitVerified ? 0.35 : 0;
     const detailBonus =
@@ -162,7 +167,7 @@ function getPlaceStatusSnapshot(placeStatus) {
     };
 }
 
-async function loadRecentEvidence({placeId, since}) {
+async function loadRecentEvidence({placeId, since, now}) {
     return Promise.all([
         PlaceUpdate.find({
             place: placeId,
@@ -175,6 +180,11 @@ async function loadRecentEvidence({placeId, since}) {
         Confirmation.find({
             place: placeId,
             observedAt: {$gte: since}
+        }).lean(),
+        PresenceSignal.find({
+            place: placeId,
+            observedAt: {$gte: since},
+            expiresAt: {$gt: now}
         }).lean()
     ]);
 }
@@ -352,10 +362,12 @@ async function calculatePlaceStatus(placeId, options = {}) {
     const [
         placeUpdates,
         quickSignals,
-        confirmations
+        confirmations,
+        presenceSignals
     ] = await loadRecentEvidence({
         placeId,
-        since
+        since,
+        now
     });
 
     const statusByPlaceUpdateId = new Map(
@@ -412,6 +424,41 @@ async function calculatePlaceStatus(placeId, options = {}) {
         const result = addStateEvidence({
             evidence: quickSignal,
             type: 'QuickSignal',
+            scores,
+            evidenceRefs,
+            evidenceDates,
+            freshnessScores,
+            now
+        });
+
+        if (result.added) {
+            evidenceCount += 1;
+            stateEvidenceCount += 1;
+        }
+
+        if (result.verified) {
+            verifiedEvidenceCount += 1;
+        }
+    }
+
+    const presenceStatus =
+        presenceSignals.length >= 4
+            ? 'busy'
+            : presenceSignals.length >= 2
+                ? 'normal'
+                : 'unknown';
+
+    for (const presenceSignal of presenceSignals) {
+        if (presenceStatus === 'unknown') {
+            break;
+        }
+
+        const result = addStateEvidence({
+            evidence: {
+                ...presenceSignal,
+                status: presenceStatus
+            },
+            type: 'PresenceSignal',
             scores,
             evidenceRefs,
             evidenceDates,
