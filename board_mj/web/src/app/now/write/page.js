@@ -249,6 +249,33 @@ function NowWriteContent() {
                 }
             }
 
+            const hasDetailedUpdate = Boolean(
+                content.trim() || imageFile
+            );
+
+            if (!hasDetailedUpdate) {
+                const quickSignalBody = {
+                    placeId,
+                    status
+                };
+
+                if (longitude !== null) {
+                    quickSignalBody.longitude = longitude;
+                }
+
+                if (latitude !== null) {
+                    quickSignalBody.latitude = latitude;
+                }
+
+                await apiFetch('/api/quick-signals', {
+                    method: 'POST',
+                    body: JSON.stringify(quickSignalBody)
+                });
+
+                router.push('/now');
+                return;
+            }
+
             const formData = new FormData();
 
             formData.append('placeId', placeId);

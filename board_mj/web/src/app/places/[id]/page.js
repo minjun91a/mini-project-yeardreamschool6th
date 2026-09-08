@@ -66,6 +66,8 @@ export default function PlaceDetailPage() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [confirmationLoading, setConfirmationLoading] = useState('');
+    const [confirmationMessage, setConfirmationMessage] = useState('');
 
     useEffect(() => {
         const loadPlace = async () => {
@@ -147,6 +149,45 @@ export default function PlaceDetailPage() {
             ? latestPost
             : null;
 
+    const handleConfirmation = async (type) => {
+        if (!latestNow || confirmationLoading) {
+            return;
+        }
+
+        const body = {
+            placeId: id,
+            type
+        };
+
+        if (latestNow.evidenceType === 'PlaceUpdate') {
+            body.placeUpdateId = latestNow._id;
+        }
+
+        if (latestNow.evidenceType === 'QuickSignal') {
+            body.quickSignalId = latestNow._id;
+        }
+
+        try {
+            setConfirmationLoading(type);
+            setConfirmationMessage('');
+
+            await apiFetch('/api/confirmations', {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+
+            setConfirmationMessage(
+                type === 'still_valid'
+                    ? '현재 정보가 유지되는 것으로 확인했어요.'
+                    : '정보가 달라졌다는 확인을 남겼어요.'
+            );
+        } catch (err) {
+            setConfirmationMessage(err.message);
+        } finally {
+            setConfirmationLoading('');
+        }
+    };
+
     const handleFollow = async () => {
         if (followLoading) return;
 
@@ -227,6 +268,51 @@ export default function PlaceDetailPage() {
                         </span>
                     </div>
                 </header>
+
+                {latestNow && (
+                    <section className="place-detail-confirmation">
+                        <div className="place-detail-section-head">
+                            <div>
+                                <h2>이 정보가 아직 맞나요?</h2>
+                                <p>
+                                    {formatRelativeTime(getItemTime(latestNow))}
+                                    {' '}
+                                    기준 현장 정보를 확인해주세요.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="place-detail-confirmation-actions">
+                            <button
+                                type="button"
+                                className="place-detail-confirmation-button primary"
+                                disabled={Boolean(confirmationLoading)}
+                                onClick={() => handleConfirmation('still_valid')}
+                            >
+                                {confirmationLoading === 'still_valid'
+                                    ? '확인 중...'
+                                    : '지금도 맞아요'}
+                            </button>
+
+                            <button
+                                type="button"
+                                className="place-detail-confirmation-button"
+                                disabled={Boolean(confirmationLoading)}
+                                onClick={() => handleConfirmation('changed')}
+                            >
+                                {confirmationLoading === 'changed'
+                                    ? '확인 중...'
+                                    : '달라졌어요'}
+                            </button>
+                        </div>
+
+                        {confirmationMessage && (
+                            <p className="place-detail-confirmation-message">
+                                {confirmationMessage}
+                            </p>
+                        )}
+                    </section>
+                )}
 
                 <section className="place-detail-live">
                     <div className="place-detail-section-head">

@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Post = require('../models/post');
 const PlaceUpdate = require('../models/placeUpdate');
+const QuickSignal = require('../models/quickSignal');
 const Place = require('../models/place');
 const auth = require('../middlewares/auth');
 const User = require('../models/user');
@@ -161,6 +162,17 @@ function serializePlaceUpdate(update) {
     };
 }
 
+function serializeQuickSignal(signal) {
+    return {
+        ...signal,
+        kind: 'quick_signal',
+        evidenceType: 'QuickSignal',
+        content: null,
+        imageUrl: null,
+        commentCount: 0
+    };
+}
+
 function serializeLegacyNowPost(post) {
     return {
         ...post,
@@ -237,7 +249,10 @@ router.get('/now/latest', async (req, res) => {
         Date.now() - 6 * 60 * 60 * 1000
     );
 
-    const latestPlaceUpdates = await PlaceUpdate.aggregate([
+    const evidenceLimit = limit * 2;
+
+    const [latestPlaceUpdates, latestQuickSignals] = await Promise.all([
+        PlaceUpdate.aggregate([
         {
             $match: {
                 place: {$ne: null},
@@ -268,8 +283,43 @@ router.get('/now/latest', async (req, res) => {
             }
         },
         {
-            $limit: limit
+            $limit: evidenceLimit
         }
+    ]),
+        QuickSignal.aggregate([
+        {
+            $match: {
+                place: {$ne: null},
+                observedAt: {$gte: freshnessLimit}
+            }
+        },
+        {
+            $sort: {
+                observedAt: -1,
+                createdAt: -1
+            }
+        },
+        {
+            $group: {
+                _id: '$place',
+                signal: {$first: '$$ROOT'}
+            }
+        },
+        {
+            $replaceRoot: {
+                newRoot: '$signal'
+            }
+        },
+        {
+            $sort: {
+                observedAt: -1,
+                createdAt: -1
+            }
+        },
+        {
+            $limit: evidenceLimit
+        }
+    ])
     ]);
 
     await PlaceUpdate.populate(latestPlaceUpdates, [
@@ -283,15 +333,46 @@ router.get('/now/latest', async (req, res) => {
         }
     ]);
 
-    const placeIdsWithUpdates = latestPlaceUpdates.map((update) => {
-        return update.place?._id || update.place;
+    await QuickSignal.populate(latestQuickSignals, [
+        {
+            path: 'author',
+            select: '_id id name'
+        },
+        {
+            path: 'place',
+            select: 'name category address roadAddress location currentStatus'
+        }
+    ]);
+
+    const latestPrimaryEvidence = [
+        ...latestPlaceUpdates.map(serializePlaceUpdate),
+        ...latestQuickSignals.map(serializeQuickSignal)
+    ].sort((a, b) => {
+        return new Date(b.observedAt || b.createdAt) -
+            new Date(a.observedAt || a.createdAt);
+    }).filter((item, index, array) => {
+        const placeId = item.place?._id || item.place;
+
+        if (!placeId) {
+            return false;
+        }
+
+        return array.findIndex((candidate) => {
+            const candidatePlaceId = candidate.place?._id || candidate.place;
+
+            return String(candidatePlaceId) === String(placeId);
+        }) === index;
+    }).slice(0, limit);
+
+    const placeIdsWithPrimaryEvidence = latestPrimaryEvidence.map((item) => {
+        return item.place?._id || item.place;
     }).filter(Boolean);
 
-    const legacyLimit = Math.max(limit - latestPlaceUpdates.length, 0);
+    const legacyLimit = Math.max(limit - latestPrimaryEvidence.length, 0);
 
     const legacyMatch = {
         kind: 'now',
-        place: {$ne: null, $nin: placeIdsWithUpdates},
+        place: {$ne: null, $nin: placeIdsWithPrimaryEvidence},
         createdAt: {$gte: freshnessLimit}
     };
 
@@ -339,7 +420,7 @@ router.get('/now/latest', async (req, res) => {
     ]);
 
     const items = [
-        ...latestPlaceUpdates.map(serializePlaceUpdate),
+        ...latestPrimaryEvidence,
         ...latestNowPosts.map(serializeLegacyNowPost)
     ].sort((a, b) => {
         return new Date(b.observedAt || b.createdAt) -
@@ -597,8 +678,13 @@ router.get('/:id/now', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, parseInt(req.query.limit) || 10);
 
-    const [placeUpdates, legacyPosts] = await Promise.all([
+    const [placeUpdates, quickSignals, legacyPosts] = await Promise.all([
         PlaceUpdate.find({place: id})
+            .sort({observedAt: -1, createdAt: -1})
+            .populate('author', '_id id name')
+            .populate('place', 'name category address roadAddress location currentStatus')
+            .lean(),
+        QuickSignal.find({place: id})
             .sort({observedAt: -1, createdAt: -1})
             .populate('author', '_id id name')
             .populate('place', 'name category address roadAddress location currentStatus')
@@ -615,6 +701,7 @@ router.get('/:id/now', async (req, res) => {
 
     const allItems = [
         ...placeUpdates.map(serializePlaceUpdate),
+        ...quickSignals.map(serializeQuickSignal),
         ...legacyPosts.map(serializeLegacyNowPost)
     ].sort((a, b) => {
         return new Date(b.observedAt || b.createdAt) -

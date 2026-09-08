@@ -25,6 +25,8 @@ app.use('/api/posts', require('./routes/posts'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/place-updates', require('./routes/placeUpdates'));
+app.use('/api/quick-signals', require('./routes/quickSignals'));
+app.use('/api/confirmations', require('./routes/confirmations'));
 app.use('/api/places', require('./routes/places'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/users', require('./routes/users'));

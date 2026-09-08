@@ -133,6 +133,12 @@ const statsSchema = new mongoose.Schema(
             min: 0
         },
 
+        quickSignalCount: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+
         followerCount: {
             type: Number,
             default: 0,
