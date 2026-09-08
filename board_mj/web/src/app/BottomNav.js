@@ -59,7 +59,7 @@ export default function BottomNav() {
     const items = [
         {
             href: '/now',
-            label: '지금',
+            label: '홈',
             icon: <HomeIcon />
         },
         {
@@ -69,7 +69,7 @@ export default function BottomNav() {
         },
         {
             href: '/now/write',
-            label: '글쓰기',
+            label: 'NOW',
             icon: <WriteIcon />
         },
         {
