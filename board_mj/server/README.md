@@ -117,6 +117,7 @@ Base URL: `http://localhost`
 - `observedAt`과 `createdAt`을 분리한다. `observedAt`이 없으면 서버 현재 시각을 사용한다.
 - `visitVerified`는 사용자가 보낸 좌표와 장소 좌표의 300m 이내 여부로 계산한다.
 - `/api/places/now/latest`와 `/api/places/:id/now`는 `PlaceUpdate`, `QuickSignal`, legacy `Post(kind='now')`를 함께 반환한다.
+- `/api/places/live-statuses`는 현재 계산된 상태가 유효한 장소를 최신순으로 반환하며 NOW v2의 기본 데이터로 사용한다.
 - 새 현장 Evidence가 생성되면 deterministic Core Engine v1이 `PlaceStatus`를 생성하고 `Place.currentStatus` snapshot을 갱신한다.
 - 기존 now post 백필은 `node src/scripts/migrateNowPostsToPlaceUpdates.js`로 실행한다. 이 스크립트는 `legacyPost` 기준으로 중복을 방지한다.
 - Confirmation index를 partial unique 구조로 동기화하려면 `node src/scripts/syncConfirmationIndexes.js`를 실행한다.

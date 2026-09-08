@@ -31,6 +31,35 @@ const CATEGORY_FILTERS = [
     {value: 'other', label: '기타'},
 ];
 
+const STATUS_LABEL = {
+    quiet: '🟢 여유',
+    normal: '🟡 보통',
+    busy: '🔴 혼잡',
+    unknown: '정보 없음'
+};
+
+const STATUS_FILTERS = [
+    {value: 'all', label: '전체'},
+    {value: 'quiet', label: '여유'},
+    {value: 'normal', label: '보통'},
+    {value: 'busy', label: '혼잡'},
+    {value: 'unknown', label: '정보 없음'}
+];
+
+function formatScore(score) {
+    const value = Number(score);
+
+    if (!Number.isFinite(value)) {
+        return 0;
+    }
+
+    return Math.round(value * 100);
+}
+
+function getPlaceStatus(place) {
+    return place.currentStatus?.status || 'unknown';
+}
+
 const PlacesMap = dynamic(
     () => import('./PlacesMap'),
     {
@@ -51,6 +80,7 @@ export default function PlacesPage() {
     const [userLocation, setUserLocation] = useState(null);
     const [selectedPlace, setSelectedPlace] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedStatus, setSelectedStatus] = useState('all');
 
     useEffect(() => {
         if (!query.trim()) {
@@ -142,12 +172,16 @@ export default function PlacesPage() {
         );
     }
 
-    const filteredPlaces =
-        selectedCategory === 'all'
-            ? places
-            : places.filter(
-                (place) => place.category === selectedCategory
-            );
+    const filteredPlaces = places.filter((place) => {
+        const categoryMatched =
+            selectedCategory === 'all' ||
+            place.category === selectedCategory;
+        const statusMatched =
+            selectedStatus === 'all' ||
+            getPlaceStatus(place) === selectedStatus;
+
+        return categoryMatched && statusMatched;
+    });
 
     const externalDisplayPlaces = externalPlaces
         .map((place) => {
@@ -179,8 +213,14 @@ export default function PlacesPage() {
             };
         })
         .filter((place) => {
-            return selectedCategory === 'all' ||
+            const categoryMatched =
+                selectedCategory === 'all' ||
                 place.category === selectedCategory;
+            const statusMatched =
+                selectedStatus === 'all' ||
+                getPlaceStatus(place) === selectedStatus;
+
+            return categoryMatched && statusMatched;
         });
 
     const displayedPlaces = [
@@ -270,6 +310,26 @@ export default function PlacesPage() {
                     ))}
                 </div>
 
+                <div className="places-status-row">
+                    {STATUS_FILTERS.map((status) => (
+                        <button
+                            key={status.value}
+                            type="button"
+                            className={
+                                selectedStatus === status.value
+                                    ? 'active'
+                                    : ''
+                            }
+                            onClick={() => {
+                                setSelectedStatus(status.value);
+                                setSelectedPlace(null);
+                            }}
+                        >
+                            {status.label}
+                        </button>
+                    ))}
+                </div>
+
                 <div className="places-map">
                     <PlacesMap
                         places={displayedPlaces}
@@ -303,11 +363,25 @@ export default function PlacesPage() {
                                     </span>
 
                                     <span className="places-map-card-status">
-                                        지금 정보 보기
+                                        {STATUS_LABEL[getPlaceStatus(selectedPlace)]}
                                     </span>
                                 </div>
 
                                 <p>{selectedPlace.address}</p>
+
+                                <div className="places-map-card-metrics">
+                                    <span>
+                                        Freshness {formatScore(
+                                            selectedPlace.currentStatus?.freshnessScore
+                                        )}%
+                                    </span>
+
+                                    <span>
+                                        Confidence {formatScore(
+                                            selectedPlace.currentStatus?.confidenceScore
+                                        )}%
+                                    </span>
+                                </div>
 
                                 <span className="places-map-card-link">
                                     장소 상세 보기 →
@@ -334,7 +408,7 @@ export default function PlacesPage() {
                                     </span>
 
                                     <span className="places-map-card-status">
-                                        아직 정보 없음
+                                        {STATUS_LABEL[getPlaceStatus(selectedPlace)]}
                                     </span>
                                 </div>
 

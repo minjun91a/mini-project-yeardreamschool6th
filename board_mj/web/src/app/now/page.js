@@ -7,7 +7,15 @@ import Link from "next/link";
 const STATUS_LABEL = {
     quiet: '🟢 여유',
     normal: '🟡 보통',
-    busy: '🔴 혼잡'
+    busy: '🔴 혼잡',
+    unknown: '정보 부족'
+};
+
+const TREND_LABEL = {
+    rising: '혼잡 증가',
+    falling: '혼잡 완화',
+    stable: '유지 중',
+    unknown: '변화 판단 전'
 };
 
 const CATEGORY_LABEL = {
@@ -53,54 +61,45 @@ function formatRelativeTime(createdAt) {
     return created.toLocaleDateString('ko-KR');
 }
 
-function getFreshness(createdAt) {
-    const now = new Date();
-    const created = new Date(createdAt);
+function formatScore(score) {
+    const value = Number(score);
 
-    const diff = now - created;
-    const hours = diff / (1000 * 60 * 60);
-
-    if (hours < 1) {
-        return {
-            type: 'fresh',
-            label: '실시간'
-        };
+    if (!Number.isFinite(value)) {
+        return 0;
     }
 
-    if (hours < 3) {
-        return {
-            type: 'recent',
-            label: '최근 정보'
-        };
-    }
-
-    if (hours < 24) {
-        return {
-            type: 'old',
-            label: '시간이 지난 정보'
-        };
-    }
-
-    return {
-        type: 'expired',
-        label: '오래된 정보'
-    };
+    return Math.round(value * 100);
 }
 
-function getItemTime(item) {
-    return item.observedAt || item.createdAt;
+function getStatusTime(place) {
+    return place.currentStatus?.freshestEvidenceAt ||
+        place.currentStatus?.lastSignalAt ||
+        place.currentStatus?.calculatedAt ||
+        place.stats?.lastSignalAt ||
+        place.updatedAt;
 }
 
-function getItemDetailHref(item) {
-    if (item.evidenceType === 'Post') {
-        return `/posts/${item._id}`;
+function getFreshnessType(score) {
+    const percent = formatScore(score);
+
+    if (percent >= 70) {
+        return 'fresh';
     }
 
-    return `/places/${item.place?._id}`;
+    if (percent >= 35) {
+        return 'recent';
+    }
+
+    return 'old';
+}
+
+function getEvidenceCount(place) {
+    return (place.stats?.updateCount || 0) +
+        (place.stats?.quickSignalCount || 0);
 }
 
 export default function NowPage() {
-    const [items, setItems] = useState([]);
+    const [places, setPlaces] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -118,9 +117,9 @@ export default function NowPage() {
     useEffect(() => {
         const loadNowFeed = async () => {
             try {
-                const data = await apiFetch('/api/places/now/latest');
+                const data = await apiFetch('/api/places/live-statuses');
 
-                setItems(data.items);
+                setPlaces(data.places);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -228,13 +227,13 @@ export default function NowPage() {
         return `${(distance / 1000).toFixed(1)}km`
     }
 
-    const visibleItems = nearbyMode
-        ? items.filter((post) =>
+    const visiblePlaces = nearbyMode
+        ? places.filter((place) =>
             nearbyPlaces.some(
-                (place) => place._id === post.place?._id
+                (nearbyPlace) => nearbyPlace._id === place._id
             )
         )
-        : items;
+        : places;
 
     if (loading) {
         return <main>불러오는 중...</main>;
@@ -365,36 +364,41 @@ export default function NowPage() {
                     </section>
                 ) : (
                     <section className="home-now-feed">
-                        {visibleItems.length === 0 && (
+                        {visiblePlaces.length === 0 && (
                             <div className="home-now-empty">
                                 {nearbyMode
-                                    ? '주변에 최신 현장 정보가 없어요.'
-                                    : '아직 현장 정보가 없어요.'}
+                                    ? '주변에 계산된 최신 장소 상황이 없어요.'
+                                    : '아직 계산된 장소 상황이 없어요.'}
                             </div>
                         )}
 
-                        {visibleItems.map((post) => {
-                            const itemTime = getItemTime(post);
-                            const freshness = getFreshness(itemTime);
+                        {visiblePlaces.map((place) => {
+                            const currentStatus =
+                                place.currentStatus || {};
+                            const status = currentStatus.status || 'unknown';
+                            const statusTime = getStatusTime(place);
+                            const freshnessType = getFreshnessType(
+                                currentStatus.freshnessScore
+                            );
 
-                            const distance = post.place?._id
-                                ? getPlaceDistance(post.place._id)
+                            const distance = place._id
+                                ? getPlaceDistance(place._id)
                                 : null;
 
                             const distanceText = formatDistance(distance);
 
                             return (
                                 <article
-                                    key={post._id}
+                                    key={place._id}
                                     className="home-now-card"
                                 >
                                     <div className="home-now-card-head">
                                         <div className="home-now-place">
                                             <span className="home-now-pin">●</span>
 
-                                            <Link href={`/places/${post.place?._id}`}>
+                                            <Link href={`/places/${place._id}`}>
                                                 <strong>
-                                                    {post.place?.name || '장소 정보 없음'}
+                                                    {place.name}
                                                 </strong>
                                             </Link>
 
@@ -403,58 +407,38 @@ export default function NowPage() {
                                             )}
                                         </div>
 
-                                        <span className={`home-now-time ${freshness.type}`}>
-                                            {formatRelativeTime(itemTime)}
-                                        </span>
+                                        {statusTime && (
+                                            <span className={`home-now-time ${freshnessType}`}>
+                                                {formatRelativeTime(statusTime)}
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div className="home-now-tags">
-                                        <span className={`now-status ${post.status}`}>
-                                            {STATUS_LABEL[post.status] || post.status}
+                                        <span className={`now-status ${status}`}>
+                                            {STATUS_LABEL[status] || status}
                                         </span>
 
-                                        {post.visitVerified && (
+                                        {place.category && (
                                             <span className="home-now-tag">
-                                                현장 인증
+                                                {CATEGORY_LABEL[place.category] || place.category}
                                             </span>
                                         )}
 
-                                        {post.place?.category && (
-                                            <span className="home-now-tag">
-                                                {CATEGORY_LABEL[post.place.category] || post.place.category}
-                                            </span>
-                                        )}
+                                        <span className="home-now-tag">
+                                            {TREND_LABEL[currentStatus.trend || 'unknown']}
+                                        </span>
                                     </div>
 
-                                    {post.imageUrl && (
-                                        <div className="home-now-image">
-                                            <img
-                                                src={`${process.env.NEXT_PUBLIC_API_URL}${post.imageUrl}`}
-                                                alt={`${post.place?.name || '장소'} 현장 사진`}
-                                            />
-                                        </div>
-                                    )}
+                                    <div className="home-now-status-metrics">
+                                        <span>
+                                            Freshness {formatScore(currentStatus.freshnessScore)}%
+                                        </span>
 
-                                    {post.content && (
-                                        <p className="home-now-content">
-                                            {post.content}
-                                        </p>
-                                    )}
-
-                                    {post.author?._id && (
-                                        <Link
-                                            href={`/profile/${post.author._id}`}
-                                            className="home-now-author"
-                                        >
-                                            <span className="home-now-author-avatar">
-                                                {(post.author.name || 'A').charAt(0).toUpperCase()}
-                                            </span>
-
-                                            <span className="home-now-author-name">
-                                                {post.author.name || 'ago 사용자'}
-                                            </span>
-                                        </Link>
-                                    )}
+                                        <span>
+                                            Confidence {formatScore(currentStatus.confidenceScore)}%
+                                        </span>
+                                    </div>
 
                                     <footer className="home-now-card-footer">
                                         <div className="home-now-card-actions">
@@ -464,20 +448,18 @@ export default function NowPage() {
                                                     <path d="M5 20a7 7 0 0 1 14 0"/>
                                                 </svg>
 
-                                                현장에 있어요
+                                                Evidence {getEvidenceCount(place)}
                                             </span>
 
                                             <Link
-                                                href={getItemDetailHref(post)}
+                                                href={`/places/${place._id}`}
                                                 className="home-now-action"
                                             >
                                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                                     <path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
                                                 </svg>
 
-                                                {post.evidenceType === 'Post'
-                                                    ? `댓글 ${post.commentCount || 0}`
-                                                    : '현장 기록'}
+                                                장소 상황 보기
                                             </Link>
                                         </div>
 

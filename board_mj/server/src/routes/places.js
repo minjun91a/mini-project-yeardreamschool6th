@@ -435,6 +435,40 @@ router.get('/now/latest', async (req, res) => {
     });
 });
 
+router.get('/live-statuses', async (req, res) => {
+    const limit = Math.min(
+        50,
+        Math.max(1, parseInt(req.query.limit, 10) || 20)
+    );
+
+    const category = req.query.category?.trim();
+    const filter = {
+        'currentStatus.status': {$in: ['quiet', 'normal', 'busy']},
+        'currentStatus.freshnessScore': {$gte: 0.2},
+        'currentStatus.confidenceScore': {$gte: 0.25}
+    };
+
+    if (category) {
+        filter.category = category;
+    }
+
+    const places = await Place.find(filter)
+        .sort({
+            'currentStatus.freshestEvidenceAt': -1,
+            'currentStatus.calculatedAt': -1
+        })
+        .limit(limit)
+        .select('name category address roadAddress location currentStatus stats')
+        .lean();
+
+    return res.status(200).json({
+        success: true,
+        data: {
+            places
+        }
+    });
+});
+
 router.get('/nearby', async (req, res) => {
     const longitude = Number(req.query.longitude);
     const latitude = Number(req.query.latitude);
@@ -497,7 +531,10 @@ router.get('/nearby', async (req, res) => {
                 name: 1,
                 category: 1,
                 address: 1,
+                roadAddress: 1,
                 location: 1,
+                currentStatus: 1,
+                stats: 1,
                 distance: 1
             }
         }

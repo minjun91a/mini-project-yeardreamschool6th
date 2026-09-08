@@ -67,6 +67,33 @@ function getPlacePosition(place) {
     return [latitude, longitude];
 }
 
+function getStatusColor(status) {
+    if (status === 'quiet') {
+        return '#3C7135';
+    }
+
+    if (status === 'normal') {
+        return '#8C6B00';
+    }
+
+    if (status === 'busy') {
+        return '#A34038';
+    }
+
+    return '#A4A49B';
+}
+
+function getMarkerRadius(place, selectedPlace) {
+    if (selectedPlace?._id === place._id) {
+        return 12;
+    }
+
+    return place.currentStatus?.status === 'unknown' ||
+        !place.currentStatus?.status
+        ? 7
+        : 10;
+}
+
 function MapResizeFix() {
     const map = useMap();
 
@@ -151,17 +178,22 @@ export default function PlacesMap({
                     <CircleMarker
                         key={place._id}
                         center={position}
-                        radius={10}
+                        radius={getMarkerRadius(place, selectedPlace)}
                         pathOptions={{
                             color:
                                 selectedPlace?._id === place._id
-                                    ? '#148F3D'
+                                    ? '#1F1F1F'
                                     : '#FFFFFF',
                             fillColor:
                                 selectedPlace?._id === place._id
                                     ? '#C6F047'
-                                    : '#148F3D',
-                            fillOpacity: 1,
+                                    : getStatusColor(
+                                        place.currentStatus?.status
+                                    ),
+                            fillOpacity: place.currentStatus?.status &&
+                                place.currentStatus.status !== 'unknown'
+                                ? 1
+                                : 0.45,
                             weight: 3,
                         }}
                         eventHandlers={{
