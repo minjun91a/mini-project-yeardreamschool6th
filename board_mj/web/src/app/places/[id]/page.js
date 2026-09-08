@@ -19,6 +19,8 @@ const CATEGORY_LABEL = {
     shopping: '쇼핑',
     park: '공원',
     culture: '문화',
+    street: '거리',
+    other: '기타',
     etc: '기타'
 };
 
@@ -39,6 +41,18 @@ function formatRelativeTime(createdAt) {
     if (days < 7) return `${days}일 전`;
 
     return created.toLocaleDateString('ko-KR');
+}
+
+function getItemTime(item) {
+    return item.observedAt || item.createdAt;
+}
+
+function getItemDetailHref(item, placeId) {
+    if (item.evidenceType === 'Post') {
+        return `/posts/${item._id}`;
+    }
+
+    return `/places/${placeId}`;
 }
 
 export default function PlaceDetailPage() {
@@ -112,7 +126,7 @@ export default function PlaceDetailPage() {
                 return false;
             }
 
-            const createdAt = new Date(post.createdAt).getTime();
+            const createdAt = new Date(getItemTime(post)).getTime();
             const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
 
             return createdAt >= threeHoursAgo;
@@ -128,7 +142,7 @@ export default function PlaceDetailPage() {
 
     const latestNow =
         latestPost &&
-        Date.now() - new Date(latestPost.createdAt).getTime()
+        Date.now() - new Date(getItemTime(latestPost)).getTime()
         <= 6 * 60 * 60 * 1000
             ? latestPost
             : null;
@@ -243,7 +257,7 @@ export default function PlaceDetailPage() {
                                     </span>
 
                                     <small>
-                                        {formatRelativeTime(post.createdAt)}
+                                        {formatRelativeTime(getItemTime(post))}
                                     </small>
                                 </Link>
                             ))}
@@ -286,7 +300,7 @@ export default function PlaceDetailPage() {
                                         </span>
 
                                         <span className="place-detail-history-time">
-                                            {formatRelativeTime(post.createdAt)}
+                                            {formatRelativeTime(getItemTime(post))}
                                         </span>
 
                                         {post.author?.name && (
@@ -331,7 +345,7 @@ export default function PlaceDetailPage() {
                                         </div>
 
                                         <small>
-                                            {formatRelativeTime(post.createdAt)}
+                                            {formatRelativeTime(getItemTime(post))}
                                         </small>
                                     </div>
                                 </div>
@@ -345,9 +359,11 @@ export default function PlaceDetailPage() {
                                 </button>
                             </header>
 
-                            <p className="place-detail-post-content">
-                                {post.content}
-                            </p>
+                            {post.content && (
+                                <p className="place-detail-post-content">
+                                    {post.content}
+                                </p>
+                            )}
 
                             {post.imageUrl && (
                                 <div className="place-detail-post-image">
@@ -369,14 +385,16 @@ export default function PlaceDetailPage() {
                                     </span>
 
                                     <Link
-                                        href={`/posts/${post._id}`}
+                                        href={getItemDetailHref(post, id)}
                                         className="place-detail-action"
                                     >
                                         <svg viewBox="0 0 24 24" aria-hidden="true">
                                             <path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
                                         </svg>
 
-                                        댓글 {post.commentCount || 0}
+                                        {post.evidenceType === 'Post'
+                                            ? `댓글 ${post.commentCount || 0}`
+                                            : '현장 기록'}
                                     </Link>
                                 </div>
 

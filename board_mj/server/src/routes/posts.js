@@ -8,6 +8,8 @@ const Place = require('../models/place');
 const upload = require('../middlewares/upload');
 const User = require('../models/user');
 const Notification = require('../models/notification');
+const PlaceUpdate = require('../models/placeUpdate');
+const {getDistanceMeters} = require('../services/geo');
 
 function uploadSingleImage(req, res, next) {
     upload.single('image')(req, res, (err) => {
@@ -33,28 +35,6 @@ function uploadSingleImage(req, res, next) {
 
         return next();
     });
-}
-
-function getDistanceMeters(lat1, lon1, lat2, lon2) {
-    const R = 6371000;
-
-    const toRad = (value) => value * Math.PI / 180;
-
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) ** 2;
-
-    const c = 2 * Math.atan2(
-        Math.sqrt(a),
-        Math.sqrt(1 - a)
-    );
-
-    return R * c;
 }
 
 router.get('/', async (req, res) => {
@@ -194,6 +174,7 @@ router.post(
             }
 
             let visitVerified = false;
+            let distanceFromPlace = null;
 
             const longitudeNumber = Number(longitude);
             const latitudeNumber = Number(latitude);
@@ -206,14 +187,14 @@ router.post(
                 const [placeLongitude, placeLatitude] =
                     place.location.coordinates;
 
-                const distance = getDistanceMeters(
+                distanceFromPlace = getDistanceMeters(
                     latitudeNumber,
                     longitudeNumber,
                     placeLatitude,
                     placeLongitude
                 );
 
-                visitVerified = distance <= 300;
+                visitVerified = distanceFromPlace <= 300;
             }
 
             const allowedStatuses = ['quiet', 'normal', 'busy'];
@@ -257,6 +238,33 @@ router.post(
                 visitVerified,
                 imageUrl
             });
+
+            await PlaceUpdate.create({
+                place: placeId,
+                author: req.user.sub,
+                status,
+                originalText: content,
+                content,
+                images: imageUrl ? [{url: imageUrl}] : [],
+                signals: [],
+                visitVerified,
+                distanceFromPlace,
+                source: 'community',
+                legacyPost: post._id,
+                observedAt: post.createdAt
+            });
+
+            await Place.updateOne(
+                {_id: placeId},
+                {
+                    $inc: {
+                        'stats.updateCount': 1
+                    },
+                    $set: {
+                        'stats.lastSignalAt': post.createdAt
+                    }
+                }
+            );
 
             const followers = await User.find({
                 followedPlaces: placeId,

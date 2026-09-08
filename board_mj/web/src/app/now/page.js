@@ -18,6 +18,8 @@ const CATEGORY_LABEL = {
     shopping: '쇼핑',
     park: '공원',
     culture: '문화',
+    street: '거리',
+    other: '기타',
     etc: '기타',
 };
 
@@ -83,6 +85,18 @@ function getFreshness(createdAt) {
         type: 'expired',
         label: '오래된 정보'
     };
+}
+
+function getItemTime(item) {
+    return item.observedAt || item.createdAt;
+}
+
+function getItemDetailHref(item) {
+    if (item.evidenceType === 'Post') {
+        return `/posts/${item._id}`;
+    }
+
+    return `/places/${item.place?._id}`;
 }
 
 export default function NowPage() {
@@ -360,7 +374,8 @@ export default function NowPage() {
                         )}
 
                         {visibleItems.map((post) => {
-                            const freshness = getFreshness(post.createdAt);
+                            const itemTime = getItemTime(post);
+                            const freshness = getFreshness(itemTime);
 
                             const distance = post.place?._id
                                 ? getPlaceDistance(post.place._id)
@@ -389,7 +404,7 @@ export default function NowPage() {
                                         </div>
 
                                         <span className={`home-now-time ${freshness.type}`}>
-                                            {formatRelativeTime(post.createdAt)}
+                                            {formatRelativeTime(itemTime)}
                                         </span>
                                     </div>
 
@@ -420,9 +435,11 @@ export default function NowPage() {
                                         </div>
                                     )}
 
-                                    <p className="home-now-content">
-                                        {post.content}
-                                    </p>
+                                    {post.content && (
+                                        <p className="home-now-content">
+                                            {post.content}
+                                        </p>
+                                    )}
 
                                     {post.author?._id && (
                                         <Link
@@ -451,14 +468,16 @@ export default function NowPage() {
                                             </span>
 
                                             <Link
-                                                href={`/posts/${post._id}`}
+                                                href={getItemDetailHref(post)}
                                                 className="home-now-action"
                                             >
                                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                                     <path d="M21 11.5a8.5 8.5 0 0 1-9 8.5 9.6 9.6 0 0 1-3.8-.8L3 21l1.7-4.5A8.1 8.1 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5Z"/>
                                                 </svg>
 
-                                                댓글 {post.commentCount || 0}
+                                                {post.evidenceType === 'Post'
+                                                    ? `댓글 ${post.commentCount || 0}`
+                                                    : '현장 기록'}
                                             </Link>
                                         </div>
 

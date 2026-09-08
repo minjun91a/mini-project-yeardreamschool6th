@@ -93,6 +93,20 @@ Base URL: `http://localhost`
 - 목록 응답에는 `content`를 포함하지 않는다 (`.select('-content')`)
 - `page` 최소 1, `limit` 최대 50으로 제한
 - `author`는 `{_id, id, name}`으로 populate
+- `kind=now` 작성은 기존 호환용으로 유지되며, 같은 현장 정보가 `PlaceUpdate`에도 함께 저장된다.
+
+### 현장 정보
+
+| 메서드 | 경로 | 인증 | 요청 | 성공 | 실패 |
+|---|---|---|---|---|---|
+| GET | `/api/place-updates` | - | `?place&author&page&limit` | 200 `{items, page, limit, total}` | 400 |
+| POST | `/api/place-updates` | ✔ | `multipart/form-data {placeId, status, content?, originalText?, observedAt?, longitude?, latitude?, image?}` | 201 `{placeUpdate}` | 400, 401, 404 |
+
+- `PlaceUpdate`는 `Post(kind='now')`를 대체하는 장소 중심 Evidence 모델이다.
+- 필수 입력은 `placeId + status`이며, `content`, `originalText`, `image`는 선택이다.
+- `observedAt`과 `createdAt`을 분리한다. `observedAt`이 없으면 서버 현재 시각을 사용한다.
+- `visitVerified`는 사용자가 보낸 좌표와 장소 좌표의 300m 이내 여부로 계산한다.
+- 기존 now post 백필은 `node src/scripts/migrateNowPostsToPlaceUpdates.js`로 실행한다. 이 스크립트는 `legacyPost` 기준으로 중복을 방지한다.
 
 ### 댓글
 

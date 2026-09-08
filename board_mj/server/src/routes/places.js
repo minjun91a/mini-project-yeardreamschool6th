@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Post = require('../models/post');
+const PlaceUpdate = require('../models/placeUpdate');
 const Place = require('../models/place');
 const auth = require('../middlewares/auth');
 const User = require('../models/user');
@@ -148,6 +149,26 @@ function serializeExternalSearchItem(place, agoPlace) {
     };
 }
 
+function serializePlaceUpdate(update) {
+    const firstImage = update.images?.[0] || null;
+
+    return {
+        ...update,
+        kind: 'place_update',
+        evidenceType: 'PlaceUpdate',
+        imageUrl: firstImage?.url || null,
+        commentCount: 0
+    };
+}
+
+function serializeLegacyNowPost(post) {
+    return {
+        ...post,
+        evidenceType: 'Post',
+        observedAt: post.createdAt
+    };
+}
+
 router.get('/', async (req, res) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(
@@ -216,13 +237,68 @@ router.get('/now/latest', async (req, res) => {
         Date.now() - 6 * 60 * 60 * 1000
     );
 
-    const latestNowPosts = await Post.aggregate([
+    const latestPlaceUpdates = await PlaceUpdate.aggregate([
         {
             $match: {
-                kind: 'now',
                 place: {$ne: null},
-                createdAt: {$gte: freshnessLimit}
+                observedAt: {$gte: freshnessLimit}
             }
+        },
+        {
+            $sort: {
+                observedAt: -1,
+                createdAt: -1
+            }
+        },
+        {
+            $group: {
+                _id: '$place',
+                update: {$first: '$$ROOT'}
+            }
+        },
+        {
+            $replaceRoot: {
+                newRoot: '$update'
+            }
+        },
+        {
+            $sort: {
+                observedAt: -1,
+                createdAt: -1
+            }
+        },
+        {
+            $limit: limit
+        }
+    ]);
+
+    await PlaceUpdate.populate(latestPlaceUpdates, [
+        {
+            path: 'author',
+            select: '_id id name'
+        },
+        {
+            path: 'place',
+            select: 'name category address roadAddress location currentStatus'
+        }
+    ]);
+
+    const placeIdsWithUpdates = latestPlaceUpdates.map((update) => {
+        return update.place?._id || update.place;
+    }).filter(Boolean);
+
+    const legacyLimit = Math.max(limit - latestPlaceUpdates.length, 0);
+
+    const legacyMatch = {
+        kind: 'now',
+        place: {$ne: null, $nin: placeIdsWithUpdates},
+        createdAt: {$gte: freshnessLimit}
+    };
+
+    const latestNowPosts = legacyLimit > 0
+        ? await Post.aggregate([
+        {
+            $match: legacyMatch
         },
         {
             $sort: {
@@ -246,9 +322,10 @@ router.get('/now/latest', async (req, res) => {
             }
         },
         {
-            $limit: limit
+            $limit: legacyLimit
         }
-    ]);
+    ])
+        : [];
 
     await Post.populate(latestNowPosts, [
         {
@@ -257,14 +334,22 @@ router.get('/now/latest', async (req, res) => {
         },
         {
             path: 'place',
-            select: 'name category address'
+            select: 'name category address roadAddress location currentStatus'
         }
     ]);
+
+    const items = [
+        ...latestPlaceUpdates.map(serializePlaceUpdate),
+        ...latestNowPosts.map(serializeLegacyNowPost)
+    ].sort((a, b) => {
+        return new Date(b.observedAt || b.createdAt) -
+            new Date(a.observedAt || a.createdAt);
+    }).slice(0, limit);
 
     return res.json({
         success: true,
         data: {
-            items: latestNowPosts
+            items
         }
     });
 });
@@ -512,24 +597,87 @@ router.get('/:id/now', async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, parseInt(req.query.limit) || 10);
 
-    const filter = {
-        kind: 'now',
-        place: id
-    };
+    const [placeUpdates, legacyPosts] = await Promise.all([
+        PlaceUpdate.find({place: id})
+            .sort({observedAt: -1, createdAt: -1})
+            .populate('author', '_id id name')
+            .populate('place', 'name category address roadAddress location currentStatus')
+            .lean(),
+        Post.find({
+            kind: 'now',
+            place: id
+        })
+            .sort({createdAt: -1})
+            .populate('author', '_id name')
+            .populate('place', 'name category address roadAddress location currentStatus')
+            .lean()
+    ]);
 
-    const items = await Post.find(filter)
-        .sort({createdAt: -1})
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .populate('author', '_id name')
-        .populate('place', 'name category address')
-        .lean();
+    const allItems = [
+        ...placeUpdates.map(serializePlaceUpdate),
+        ...legacyPosts.map(serializeLegacyNowPost)
+    ].sort((a, b) => {
+        return new Date(b.observedAt || b.createdAt) -
+            new Date(a.observedAt || a.createdAt);
+    });
 
-    const total = await Post.countDocuments(filter);
+    const items = allItems
+        .slice((page - 1) * limit, page * limit);
+
+    const total = allItems.length;
 
     return res.json({
         success: true,
         data: {items, page, limit, total}
+    });
+});
+
+router.get('/:id/place-updates', async (req, res) => {
+    const {id} = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_ID',
+                message: '올바르지 않은 장소 ID입니다.'
+            }
+        });
+    }
+
+    const place = await Place.findById(id);
+
+    if (!place) {
+        return res.status(404).json({
+            success: false,
+            error: {
+                code: 'PLACE_NOT_FOUND',
+                message: '장소를 찾을 수 없습니다.'
+            }
+        });
+    }
+
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, parseInt(req.query.limit) || 10);
+
+    const items = await PlaceUpdate.find({place: id})
+        .sort({observedAt: -1, createdAt: -1})
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('author', '_id id name')
+        .populate('place', 'name category address roadAddress location currentStatus')
+        .lean();
+
+    const total = await PlaceUpdate.countDocuments({place: id});
+
+    return res.json({
+        success: true,
+        data: {
+            items: items.map(serializePlaceUpdate),
+            page,
+            limit,
+            total
+        }
     });
 });
 

@@ -222,11 +222,6 @@ function NowWriteContent() {
             return;
         }
 
-        if (!content.trim()) {
-            setError('내용을 입력해주세요.');
-            return;
-        }
-
         try {
             setSubmitting(true);
 
@@ -256,10 +251,13 @@ function NowWriteContent() {
 
             const formData = new FormData();
 
-            formData.append('kind', 'now');
             formData.append('placeId', placeId);
             formData.append('status', status);
-            formData.append('content', content);
+
+            if (content.trim()) {
+                formData.append('content', content);
+                formData.append('originalText', content);
+            }
 
             if (longitude !== null) {
                 formData.append('longitude', String(longitude));
@@ -273,7 +271,7 @@ function NowWriteContent() {
                 formData.append('image', imageFile);
             }
 
-            await apiFetch('/api/posts', {
+            await apiFetch('/api/place-updates', {
                 method: 'POST',
                 body: formData
             });
@@ -302,7 +300,7 @@ function NowWriteContent() {
                     </button>
 
                     <h1 className="now-write-topbar-title">
-                        글 작성
+                        지금 알리기
                     </h1>
 
                     <button
@@ -443,9 +441,9 @@ function NowWriteContent() {
                         htmlFor="content"
                         className="now-write-question"
                     >
-                        지금 이 장소에서 무슨 일이
+                        지금 이 장소는 어떤가요?
                         <br />
-                        일어나고 있나요?
+                        짧은 설명은 선택이에요.
                     </label>
 
                     <textarea
@@ -453,7 +451,7 @@ function NowWriteContent() {
                         className="now-write-compose-textarea"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        placeholder="지금 상황을 알려주세요."
+                        placeholder="대기, 좌석, 소음처럼 도움이 되는 내용을 남겨주세요."
                         maxLength={1000}
                         spellCheck={false}
                     />
