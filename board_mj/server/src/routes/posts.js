@@ -6,10 +6,11 @@ const Comment = require('../models/comment');
 const mongoose = require('mongoose');
 const Place = require('../models/place');
 const upload = require('../middlewares/upload');
-const User = require('../models/user');
-const Notification = require('../models/notification');
 const PlaceUpdate = require('../models/placeUpdate');
 const {getDistanceMeters} = require('../services/geo');
+const {
+    calculatePlaceStatusSafely
+} = require('../services/placeStatusEngine');
 
 function uploadSingleImage(req, res, next) {
     upload.single('image')(req, res, (err) => {
@@ -266,25 +267,14 @@ router.post(
                 }
             );
 
-            const followers = await User.find({
-                followedPlaces: placeId,
-                _id: {$ne: req.user.sub}
-            }).select('_id');
-
-            if (followers.length > 0) {
-                const notifications = followers.map((user) => ({
-                    user: user._id,
-                    type: 'place_now',
-                    place: placeId,
-                    post: post._id
-                }));
-
-                await Notification.insertMany(notifications);
-            }
+            const placeStatus = await calculatePlaceStatusSafely(
+                placeId,
+                {actorId: req.user.sub}
+            );
 
             return res.status(201).json({
                 success: true,
-                data: {post}
+                data: {post, placeStatus}
             });
         }
 

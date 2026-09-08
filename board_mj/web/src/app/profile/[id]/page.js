@@ -11,10 +11,6 @@ export default function UserProfilePage() {
     const userId = params.id;
 
     const [user, setUser] = useState(null);
-    const [postCount, setPostCount] = useState(0);
-
-    const [isFollowing, setIsFollowing] = useState(false);
-    const [followLoading, setFollowLoading] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -36,21 +32,9 @@ export default function UserProfilePage() {
                     return;
                 }
 
-                const [profileData, postsData] = await Promise.all([
-                    apiFetch(`/api/users/${userId}`),
-                    apiFetch(`/api/posts?author=${userId}&limit=1`)
-                ]);
+                const profileData = await apiFetch(`/api/users/${userId}`);
 
                 setUser(profileData.user);
-                setPostCount(postsData.total || 0);
-
-                const followingIds = meData.user.following || [];
-
-                setIsFollowing(
-                    followingIds.some(
-                        (id) => String(id) === String(userId)
-                    )
-                );
             } catch (err) {
                 if (err.status === 401) {
                     router.push('/login');
@@ -67,60 +51,6 @@ export default function UserProfilePage() {
             loadProfile();
         }
     }, [userId, router]);
-
-
-    async function handleFollow() {
-        if (followLoading) {
-            return;
-        }
-
-        try {
-            setFollowLoading(true);
-            setError('');
-
-            if (isFollowing) {
-                const data = await apiFetch(
-                    `/api/users/${userId}/follow`,
-                    {
-                        method: 'DELETE'
-                    }
-                );
-
-                setIsFollowing(false);
-
-                setUser((current) => ({
-                    ...current,
-                    followerCount:
-                        data.followerCount ??
-                        Math.max(
-                            0,
-                            (current?.followerCount || 0) - 1
-                        )
-                }));
-            } else {
-                const data = await apiFetch(
-                    `/api/users/${userId}/follow`,
-                    {
-                        method: 'POST'
-                    }
-                );
-
-                setIsFollowing(true);
-
-                setUser((current) => ({
-                    ...current,
-                    followerCount:
-                        data.followerCount ??
-                        (current?.followerCount || 0) + 1
-                }));
-            }
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setFollowLoading(false);
-        }
-    }
-
 
     if (loading) {
         return (
@@ -176,25 +106,10 @@ export default function UserProfilePage() {
                         </span>
                     </div>
 
-                    <button
-                        type="button"
-                        className={`profile-follow-button ${
-                            isFollowing ? 'following' : ''
-                        }`}
-                        onClick={handleFollow}
-                        disabled={followLoading}
-                    >
-                        {followLoading
-                            ? '처리 중'
-                            : isFollowing
-                                ? '팔로잉'
-                                : '팔로우'
-                        }
-                    </button>
                 </div>
 
                 <p className="profile-bio">
-                    지금, 여기, 우리의 이야기
+                    이 사용자의 장소 기여 기록입니다.
                 </p>
 
                 {error && (
@@ -206,30 +121,30 @@ export default function UserProfilePage() {
                 <div className="profile-stats">
                     <div>
                         <strong>
-                            {postCount}
+                            {user?.contributionCount || 0}
                         </strong>
-                        <span>게시글</span>
+                        <span>기여</span>
                     </div>
 
                     <div>
                         <strong>
                             {user?.followedPlaceCount || 0}
                         </strong>
-                        <span>팔로우 장소</span>
+                        <span>관심 장소</span>
                     </div>
 
                     <div>
                         <strong>
-                            {user?.followerCount || 0}
+                            {user?.contributionBreakdown?.placeUpdates || 0}
                         </strong>
-                        <span>팔로워</span>
+                        <span>현장 기록</span>
                     </div>
 
                     <div>
                         <strong>
-                            {user?.followingCount || 0}
+                            {user?.contributionBreakdown?.quickSignals || 0}
                         </strong>
-                        <span>팔로잉</span>
+                        <span>빠른 신호</span>
                     </div>
                 </div>
 

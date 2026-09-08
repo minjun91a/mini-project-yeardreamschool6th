@@ -11,9 +11,9 @@ export default function ProfilePage() {
     const [user, setUser] = useState(null);
     const [followedPlaces, setFollowedPlaces] = useState([]);
 
-    const [postCount, setPostCount] = useState(0);
-    const [followerCount, setFollowerCount] = useState(0);
-    const [followingCount, setFollowingCount] = useState(0);
+    const [contributionCount, setContributionCount] = useState(0);
+    const [placeUpdateCount, setPlaceUpdateCount] = useState(0);
+    const [quickSignalCount, setQuickSignalCount] = useState(0);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -26,17 +26,20 @@ export default function ProfilePage() {
 
                 const meData = await apiFetch('/api/auth/me');
 
-                const [followedData, postsData, profileData] = await Promise.all([
-                    apiFetch('/api/places/followed/me'),
-                    apiFetch(`/api/posts?author=${meData.user._id}&limit=1`),
+                const [followedData, profileData] = await Promise.all([
+                    apiFetch('/api/place-follows/me'),
                     apiFetch(`/api/users/${meData.user._id}`)
                 ]);
 
                 setUser(meData.user);
-                setFollowedPlaces(followedData.followedPlaces || []);
-                setPostCount(postsData.total || 0);
-                setFollowerCount(profileData.user?.followerCount || 0);
-                setFollowingCount(profileData.user?.followingCount || 0);
+                setFollowedPlaces(followedData.places || []);
+                setContributionCount(profileData.user?.contributionCount || 0);
+                setPlaceUpdateCount(
+                    profileData.user?.contributionBreakdown?.placeUpdates || 0
+                );
+                setQuickSignalCount(
+                    profileData.user?.contributionBreakdown?.quickSignals || 0
+                );
             } catch (err) {
                 if (err.status === 401) {
                     router.push('/login');
@@ -127,37 +130,37 @@ export default function ProfilePage() {
                 </div>
 
                 <p className="profile-bio">
-                    지금, 여기, 우리의 이야기
+                    관심 장소와 현장 기여를 모아둔 공간입니다.
                 </p>
 
                 <div className="profile-stats">
                     <div>
-                        <strong>{postCount}</strong>
-                        <span>게시글</span>
+                        <strong>{contributionCount}</strong>
+                        <span>기여</span>
                     </div>
 
                     <div>
                         <strong>
                             {followedPlaces.length}
                         </strong>
-                        <span>팔로우 장소</span>
+                        <span>관심 장소</span>
                     </div>
 
                     <div>
-                        <strong>{followerCount}</strong>
-                        <span>팔로워</span>
+                        <strong>{placeUpdateCount}</strong>
+                        <span>현장 기록</span>
                     </div>
 
                     <div>
-                        <strong>{followingCount}</strong>
-                        <span>팔로잉</span>
+                        <strong>{quickSignalCount}</strong>
+                        <span>빠른 신호</span>
                     </div>
                 </div>
 
                 <section className="profile-followed">
                     <div className="profile-section-head">
                         <strong>
-                            팔로우하는 장소
+                            관심 장소
                         </strong>
 
                         <span>
@@ -167,7 +170,7 @@ export default function ProfilePage() {
 
                     {followedPlaces.length === 0 ? (
                         <div className="profile-followed-empty">
-                            아직 팔로우한 장소가 없습니다.
+                            아직 관심 장소가 없습니다.
                         </div>
                     ) : (
                         <div className="profile-followed-list">

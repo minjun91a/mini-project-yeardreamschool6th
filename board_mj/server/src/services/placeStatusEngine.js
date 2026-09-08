@@ -4,6 +4,9 @@ const PlaceUpdate = require('../models/placeUpdate');
 const QuickSignal = require('../models/quickSignal');
 const Confirmation = require('../models/confirmation');
 const PlaceStatus = require('../models/placeStatus');
+const {
+    createPlaceStatusChangeNotifications
+} = require('./placeNotifications');
 
 const STATUS_VALUES = [
     'quiet',
@@ -529,12 +532,26 @@ async function calculatePlaceStatus(placeId, options = {}) {
         }
     );
 
+    try {
+        await createPlaceStatusChangeNotifications({
+            previousPlaceStatus,
+            placeStatus,
+            actorId: options.actorId
+        });
+    } catch (err) {
+        console.error(
+            '[place-status-notification]',
+            err.code || err.name,
+            err.message
+        );
+    }
+
     return placeStatus.toObject();
 }
 
-async function calculatePlaceStatusSafely(placeId) {
+async function calculatePlaceStatusSafely(placeId, options = {}) {
     try {
-        return await calculatePlaceStatus(placeId);
+        return await calculatePlaceStatus(placeId, options);
     } catch (err) {
         console.error(
             '[place-status-engine]',

@@ -10,7 +10,7 @@ const schema = new mongoose.Schema({
 
     type: {
         type: String,
-        enum: ['place_now'],
+        enum: ['place_now', 'place_status_changed'],
         required: true
     },
 
@@ -23,7 +23,32 @@ const schema = new mongoose.Schema({
     post: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Post',
-        required: true
+        default: null
+    },
+
+    placeStatus: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PlaceStatus',
+        default: null
+    },
+
+    statusFrom: {
+        type: String,
+        enum: ['quiet', 'normal', 'busy', 'unknown', null],
+        default: null
+    },
+
+    statusTo: {
+        type: String,
+        enum: ['quiet', 'normal', 'busy', 'unknown', null],
+        default: null
+    },
+
+    message: {
+        type: String,
+        default: null,
+        trim: true,
+        maxLength: 200
     },
 
     isRead: {

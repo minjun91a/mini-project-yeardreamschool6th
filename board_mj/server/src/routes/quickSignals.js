@@ -216,7 +216,10 @@ router.post('/', auth, async (req, res) => {
         }
     );
 
-    const placeStatus = await calculatePlaceStatusSafely(placeId);
+    const placeStatus = await calculatePlaceStatusSafely(
+        placeId,
+        {actorId: req.user.sub}
+    );
 
     await quickSignal.populate([
         {

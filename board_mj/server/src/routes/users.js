@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 
 const User = require('../models/user');
 const auth = require('../middlewares/auth');
+const PlaceFollow = require('../models/placeFollow');
+const PlaceUpdate = require('../models/placeUpdate');
+const QuickSignal = require('../models/quickSignal');
+const Confirmation = require('../models/confirmation');
 
 const router = express.Router();
 
@@ -26,7 +30,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const user = await User.findById(id)
-        .select('_id id name followers following followedPlaces')
+        .select('_id id name createdAt')
         .lean();
 
     if (!user) {
@@ -39,14 +43,33 @@ router.get('/:id', async (req, res) => {
         });
     }
 
+    const [
+        followedPlaceCount,
+        placeUpdateCount,
+        quickSignalCount,
+        confirmationCount
+    ] = await Promise.all([
+        PlaceFollow.countDocuments({user: id}),
+        PlaceUpdate.countDocuments({author: id}),
+        QuickSignal.countDocuments({author: id}),
+        Confirmation.countDocuments({author: id})
+    ]);
+
     return res.status(200).json({
         success: true,
         data: {
             user: {
                 ...user,
-                followerCount: user.followers?.length || 0,
-                followingCount: user.following?.length || 0,
-                followedPlaceCount: user.followedPlaces?.length || 0
+                followedPlaceCount,
+                contributionCount:
+                    placeUpdateCount +
+                    quickSignalCount +
+                    confirmationCount,
+                contributionBreakdown: {
+                    placeUpdates: placeUpdateCount,
+                    quickSignals: quickSignalCount,
+                    confirmations: confirmationCount
+                }
             }
         }
     });
@@ -59,72 +82,11 @@ router.get('/:id', async (req, res) => {
 ========================================================= */
 
 router.post('/:id/follow', auth, async (req, res) => {
-    const targetUserId = req.params.id;
-    const currentUserId = req.user.sub;
-
-    if (!mongoose.isValidObjectId(targetUserId)) {
-        return res.status(400).json({
-            success: false,
-            error: {
-                code: 'INVALID_USER_ID',
-                message: '올바르지 않은 사용자 ID입니다.'
-            }
-        });
-    }
-
-    if (String(targetUserId) === String(currentUserId)) {
-        return res.status(400).json({
-            success: false,
-            error: {
-                code: 'CANNOT_FOLLOW_SELF',
-                message: '자기 자신은 팔로우할 수 없습니다.'
-            }
-        });
-    }
-
-    const [currentUser, targetUser] = await Promise.all([
-        User.findById(currentUserId),
-        User.findById(targetUserId)
-    ]);
-
-    if (!currentUser || !targetUser) {
-        return res.status(404).json({
-            success: false,
-            error: {
-                code: 'USER_NOT_FOUND',
-                message: '사용자를 찾을 수 없습니다.'
-            }
-        });
-    }
-
-    const alreadyFollowing = currentUser.following.some(
-        (userId) => String(userId) === String(targetUserId)
-    );
-
-    if (alreadyFollowing) {
-        return res.status(409).json({
-            success: false,
-            error: {
-                code: 'ALREADY_FOLLOWING',
-                message: '이미 팔로우 중인 사용자입니다.'
-            }
-        });
-    }
-
-    currentUser.following.push(targetUserId);
-    targetUser.followers.push(currentUserId);
-
-    await Promise.all([
-        currentUser.save(),
-        targetUser.save()
-    ]);
-
-    return res.status(200).json({
-        success: true,
-        data: {
-            isFollowing: true,
-            followerCount: targetUser.followers.length,
-            followingCount: currentUser.following.length
+    return res.status(410).json({
+        success: false,
+        error: {
+            code: 'USER_FOLLOW_REMOVED',
+            message: '사람 팔로우는 제공하지 않습니다. 관심 장소를 팔로우해주세요.'
         }
     });
 });
@@ -136,72 +98,11 @@ router.post('/:id/follow', auth, async (req, res) => {
 ========================================================= */
 
 router.delete('/:id/follow', auth, async (req, res) => {
-    const targetUserId = req.params.id;
-    const currentUserId = req.user.sub;
-
-    if (!mongoose.isValidObjectId(targetUserId)) {
-        return res.status(400).json({
-            success: false,
-            error: {
-                code: 'INVALID_USER_ID',
-                message: '올바르지 않은 사용자 ID입니다.'
-            }
-        });
-    }
-
-    if (String(targetUserId) === String(currentUserId)) {
-        return res.status(400).json({
-            success: false,
-            error: {
-                code: 'CANNOT_UNFOLLOW_SELF',
-                message: '자기 자신은 언팔로우할 수 없습니다.'
-            }
-        });
-    }
-
-    const [currentUser, targetUser] = await Promise.all([
-        User.findById(currentUserId),
-        User.findById(targetUserId)
-    ]);
-
-    if (!currentUser || !targetUser) {
-        return res.status(404).json({
-            success: false,
-            error: {
-                code: 'USER_NOT_FOUND',
-                message: '사용자를 찾을 수 없습니다.'
-            }
-        });
-    }
-
-    const isFollowing = currentUser.following.some(
-        (userId) => String(userId) === String(targetUserId)
-    );
-
-    if (!isFollowing) {
-        return res.status(409).json({
-            success: false,
-            error: {
-                code: 'NOT_FOLLOWING',
-                message: '팔로우 중인 사용자가 아닙니다.'
-            }
-        });
-    }
-
-    currentUser.following.pull(targetUserId);
-    targetUser.followers.pull(currentUserId);
-
-    await Promise.all([
-        currentUser.save(),
-        targetUser.save()
-    ]);
-
-    return res.status(200).json({
-        success: true,
-        data: {
-            isFollowing: false,
-            followerCount: targetUser.followers.length,
-            followingCount: currentUser.following.length
+    return res.status(410).json({
+        success: false,
+        error: {
+            code: 'USER_FOLLOW_REMOVED',
+            message: '사람 팔로우는 제공하지 않습니다. 관심 장소를 팔로우해주세요.'
         }
     });
 });

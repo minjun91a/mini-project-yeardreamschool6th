@@ -32,20 +32,10 @@ const schema = new mongoose.Schema({
         enum: ['user', 'admin']
     },
 
-    followedPlaces: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Place'
-    }],
-
-    followers: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
-
-    following: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }]
+    legacyFollowedPlacesMigratedAt: {
+        type: Date,
+        default: null
+    }
 }, {collection: 'users', timestamps: true, id: false});
 
 schema.pre('save', async function() {

@@ -5,8 +5,8 @@ const Post = require('../models/post');
 const PlaceUpdate = require('../models/placeUpdate');
 const QuickSignal = require('../models/quickSignal');
 const Place = require('../models/place');
+const PlaceFollow = require('../models/placeFollow');
 const auth = require('../middlewares/auth');
-const User = require('../models/user');
 const kakaoLocal = require('../services/kakaoLocal');
 
 const escapeRegex = (text) => {
@@ -830,22 +830,51 @@ router.post('/:id/follow', auth, async (req, res) => {
         });
     }
 
-    const user = await User.findByIdAndUpdate(
-        req.user.sub,
+    const result = await PlaceFollow.updateOne(
         {
-            $addToSet: {
-                followedPlaces: id
+            user: req.user.sub,
+            place: id
+        },
+        {
+            $setOnInsert: {
+                user: req.user.sub,
+                place: id,
+                notificationPreferences: {
+                    statusChanges: true,
+                    freshnessReminders: false,
+                    officialUpdates: true
+                }
             }
         },
         {
-            new: true
+            upsert: true
         }
-    ).populate('followedPlaces', 'name category address');
+    );
+
+    if (result.upsertedCount > 0) {
+        await Place.updateOne(
+            {_id: id},
+            {
+                $inc: {
+                    'stats.followerCount': 1
+                }
+            }
+        );
+    }
+
+    const followedPlaces = await PlaceFollow.find({
+        user: req.user.sub
+    })
+        .sort({createdAt: -1})
+        .populate('place', 'name category address roadAddress location currentStatus stats')
+        .lean();
 
     return res.status(200).json({
         success: true,
         data : {
-            followedPlaces: user.followedPlaces
+            followedPlaces: followedPlaces
+                .map((follow) => follow.place)
+                .filter(Boolean)
         }
     });
 });
@@ -863,23 +892,12 @@ router.delete('/:id/follow', auth, async (req, res) => {
         });
     }
 
-    const user = await User.findById(req.user.sub);
+    const result = await PlaceFollow.deleteOne({
+        user: req.user.sub,
+        place: id
+    });
 
-    if (!user) {
-        return res.status(404).json({
-            success: false,
-            error: {
-                code: 'USER_NOT_FOUND',
-                message: '사용자를 찾을 수 없습니다.'
-            }
-        });
-    }
-
-    const isFollowing = user.followedPlaces.some(
-        placeId => placeId.toString() === id
-    );
-
-    if (!isFollowing) {
+    if (result.deletedCount === 0) {
         return res.status(400).json({
             success: false,
             error: {
@@ -889,43 +907,46 @@ router.delete('/:id/follow', auth, async (req, res) => {
         });
     }
 
-    user.followedPlaces.pull(id);
-    await user.save();
-
-    await user.populate(
-        'followedPlaces',
-        'name category address'
+    await Place.updateOne(
+        {_id: id, 'stats.followerCount': {$gt: 0}},
+        {
+            $inc: {
+                'stats.followerCount': -1
+            }
+        }
     );
+
+    const followedPlaces = await PlaceFollow.find({
+        user: req.user.sub
+    })
+        .sort({createdAt: -1})
+        .populate('place', 'name category address roadAddress location currentStatus stats')
+        .lean();
 
     return res.status(200).json({
         success: true,
         data: {
-            followedPlaces: user.followedPlaces
+            followedPlaces: followedPlaces
+                .map((follow) => follow.place)
+                .filter(Boolean)
         }
     });
 });
 
 router.get('/followed/me', auth, async (req, res) => {
-    const user = await User.findById(req.user.sub)
-        .populate(
-            'followedPlaces',
-            'name category address location'
-        );
-
-    if (!user) {
-        return res.status(404).json({
-            success: false,
-            error: {
-                code: 'USER_NOT_FOUND',
-                message: '사용자를 찾을 수 없습니다.'
-            }
-        });
-    }
+    const followedPlaces = await PlaceFollow.find({
+        user: req.user.sub
+    })
+        .sort({createdAt: -1})
+        .populate('place', 'name category address roadAddress location currentStatus stats')
+        .lean();
 
     return res.status(200).json({
         success: true,
         data: {
-            followedPlaces: user.followedPlaces
+            followedPlaces: followedPlaces
+                .map((follow) => follow.place)
+                .filter(Boolean)
         }
     });
 });

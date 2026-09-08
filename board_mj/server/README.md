@@ -108,6 +108,10 @@ Base URL: `http://localhost`
 | GET | `/api/place-statuses` | - | `?place&page&limit` | 200 `{items, page, limit, total}` | 400 |
 | GET | `/api/place-statuses/current` | - | `?place` | 200 `{place, placeStatus}` | 400, 404 |
 | POST | `/api/place-statuses/recalculate` | ✔ | `{placeId}` | 200 `{placeStatus}` | 400, 401, 404 |
+| GET | `/api/place-follows/me` | ✔ | - | 200 `{placeFollows, places}` | 401 |
+| GET | `/api/place-follows/count` | - | `?place` | 200 `{count}` | 400 |
+| POST | `/api/place-follows` | ✔ | `{placeId, notificationPreferences?}` | 201/200 `{placeFollow, created}` | 400, 401, 404 |
+| DELETE | `/api/place-follows/:placeId` | ✔ | - | 200 `{deletedPlaceId}` | 400, 401 |
 
 - `PlaceUpdate`는 `Post(kind='now')`를 대체하는 장소 중심 Evidence 모델이다.
 - 필수 입력은 `placeId + status`이며, `content`, `originalText`, `image`는 선택이다.
@@ -119,8 +123,11 @@ Base URL: `http://localhost`
 - `/api/places/now/latest`와 `/api/places/:id/now`는 `PlaceUpdate`, `QuickSignal`, legacy `Post(kind='now')`를 함께 반환한다.
 - `/api/places/live-statuses`는 현재 계산된 상태가 유효한 장소를 최신순으로 반환하며 NOW v2의 기본 데이터로 사용한다.
 - 새 현장 Evidence가 생성되면 deterministic Core Engine v1이 `PlaceStatus`를 생성하고 `Place.currentStatus` snapshot을 갱신한다.
+- `PlaceFollow`는 `User.followedPlaces[]`를 대체하는 독립 모델이며 관심 장소와 상태 변화 알림의 기준이다.
+- 사람 팔로우 API는 `410 USER_FOLLOW_REMOVED`로 응답한다.
 - 기존 now post 백필은 `node src/scripts/migrateNowPostsToPlaceUpdates.js`로 실행한다. 이 스크립트는 `legacyPost` 기준으로 중복을 방지한다.
 - Confirmation index를 partial unique 구조로 동기화하려면 `node src/scripts/syncConfirmationIndexes.js`를 실행한다.
+- 기존 `User.followedPlaces[]` 데이터는 `node src/scripts/migrateUserFollowedPlacesToPlaceFollows.js`로 `PlaceFollow`에 백필한다.
 
 ### 댓글
 

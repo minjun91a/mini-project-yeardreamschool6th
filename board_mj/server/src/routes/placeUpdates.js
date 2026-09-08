@@ -278,7 +278,10 @@ router.post('/', auth, uploadSingleImage, async (req, res) => {
         }
     );
 
-    const placeStatus = await calculatePlaceStatusSafely(placeId);
+    const placeStatus = await calculatePlaceStatusSafely(
+        placeId,
+        {actorId: req.user.sub}
+    );
 
     await placeUpdate.populate([
         {

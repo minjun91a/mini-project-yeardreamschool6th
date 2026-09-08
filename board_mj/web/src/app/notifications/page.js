@@ -23,6 +23,28 @@ function formatRelativeTime(createdAt) {
     return created.toLocaleDateString('ko-KR');
 }
 
+const STATUS_LABEL = {
+    quiet: '여유',
+    normal: '보통',
+    busy: '혼잡',
+    unknown: '정보 부족'
+};
+
+function getNotificationMessage(item) {
+    if (item.type === 'place_status_changed') {
+        const from = STATUS_LABEL[item.statusFrom] || item.statusFrom;
+        const to = STATUS_LABEL[item.statusTo] || item.statusTo;
+
+        if (from && to) {
+            return `관심 장소 상태가 ${from}에서 ${to}(으)로 바뀌었습니다.`;
+        }
+
+        return item.message || '관심 장소의 현재 상태가 바뀌었습니다.';
+    }
+
+    return '관심 장소에 새 현장 정보가 등록됐습니다.';
+}
+
 export default function NotificationsPage() {
     const router = useRouter();
 
@@ -87,7 +109,7 @@ export default function NotificationsPage() {
         <main className="notification-page">
             <div className="notification-header">
                 <h1>알림</h1>
-                <p>팔로우한 장소의 새로운 NOW를 확인해보세요.</p>
+                <p>관심 장소의 의미 있는 상태 변화를 확인해보세요.</p>
             </div>
 
             {items.length === 0 ? (
@@ -121,10 +143,22 @@ export default function NotificationsPage() {
                             </div>
 
                             <p className="notification-message">
-                                팔로우한 장소에 새로운 NOW가 등록됐습니다.
+                                {getNotificationMessage(item)}
                             </p>
 
-                            {item.post?.content && (
+                            {item.placeStatus && (
+                                <p className="notification-content">
+                                    Freshness {Math.round(
+                                        (item.placeStatus.freshnessScore || 0) * 100
+                                    )}%
+                                    {' · '}
+                                    Confidence {Math.round(
+                                        (item.placeStatus.confidenceScore || 0) * 100
+                                    )}%
+                                </p>
+                            )}
+
+                            {!item.placeStatus && item.post?.content && (
                                 <p className="notification-content">
                                     {item.post.content}
                                 </p>

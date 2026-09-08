@@ -9,10 +9,11 @@ router.get('/', auth, async (req, res) => {
     const items = await Notification.find({
         user: req.user.sub
     })
-        .select('type place post isRead createdAt')
+        .select('type place post placeStatus statusFrom statusTo message isRead createdAt')
         .sort({createdAt: -1})
-        .populate('place', 'name category address')
+        .populate('place', 'name category address currentStatus')
         .populate('post', 'content status imageUrl createdAt')
+        .populate('placeStatus', 'status confidenceScore freshnessScore calculatedAt')
         .lean();
 
     return res.status(200).json({
