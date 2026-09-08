@@ -34,6 +34,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 | JWT_SECRET | 토큰 서명 키 (128자 hex) | (randomBytes로 생성) |
 | CORS_ORIGIN | 허용할 프론트 주소 | http://localhost:3000 |
 | NODE_ENV | 실행 환경 | development |
+| KAKAO_REST_API_KEY | Kakao Local REST API 키. 장소 외부 검색에 사용 | Kakao Developers REST API 키 |
 
 ## 폴더 구조
 

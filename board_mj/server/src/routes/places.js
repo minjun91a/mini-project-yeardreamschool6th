@@ -5,10 +5,148 @@ const Post = require('../models/post');
 const Place = require('../models/place');
 const auth = require('../middlewares/auth');
 const User = require('../models/user');
+const kakaoLocal = require('../services/kakaoLocal');
 
 const escapeRegex = (text) => {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
+
+function sendExternalPlaceError(res, err) {
+    console.error('[external-place]', err.code || err.name, err.message);
+
+    return res.status(err.status || 500).json({
+        success: false,
+        error: {
+            code: err.code || 'EXTERNAL_PLACE_ERROR',
+            message: err.message || '외부 장소 처리 중 오류가 발생했습니다.'
+        }
+    });
+}
+
+function toFiniteCoordinate(value) {
+    const number = Number(value);
+
+    return Number.isFinite(number) ? number : null;
+}
+
+function toExternalSourceMatch(place) {
+    return place.externalSources?.find(
+        (source) => source.provider === 'kakao'
+    );
+}
+
+function buildAgoPlaceInputFromKakao(kakaoPlace = {}) {
+    const externalPlaceId = kakaoPlace.externalPlaceId ||
+        kakaoPlace.id;
+
+    const name = kakaoPlace.name || kakaoPlace.place_name;
+    const rawCategory = kakaoPlace.rawCategory ||
+        kakaoPlace.category_name ||
+        null;
+
+    const longitude = toFiniteCoordinate(
+        kakaoPlace.location?.coordinates?.[0] ?? kakaoPlace.x
+    );
+
+    const latitude = toFiniteCoordinate(
+        kakaoPlace.location?.coordinates?.[1] ?? kakaoPlace.y
+    );
+
+    const address = kakaoPlace.address ||
+        kakaoPlace.address_name ||
+        '';
+
+    const roadAddress = kakaoPlace.roadAddress ||
+        kakaoPlace.road_address_name ||
+        null;
+
+    if (!externalPlaceId || !name || !address) {
+        return null;
+    }
+
+    if (
+        longitude == null ||
+        latitude == null ||
+        longitude < -180 ||
+        longitude > 180 ||
+        latitude < -90 ||
+        latitude > 90
+    ) {
+        return null;
+    }
+
+    const normalizedKakaoPlace =
+        kakaoPlace.provider === 'kakao' && kakaoPlace.externalPlaceId
+            ? kakaoPlace
+            : kakaoLocal.normalizeKakaoPlace({
+                id: externalPlaceId,
+                place_name: name,
+                category_name: rawCategory,
+                category_group_code: kakaoPlace.categoryGroupCode ||
+                    kakaoPlace.category_group_code ||
+                    '',
+                category_group_name: kakaoPlace.categoryGroupName ||
+                    kakaoPlace.category_group_name ||
+                    '',
+                address_name: address,
+                road_address_name: roadAddress || '',
+                phone: kakaoPlace.phone || '',
+                place_url: kakaoPlace.placeUrl ||
+                    kakaoPlace.place_url ||
+                    '',
+                x: String(longitude),
+                y: String(latitude),
+                distance: kakaoPlace.distance || ''
+            });
+
+    return {
+        name: normalizedKakaoPlace.name,
+        normalizedName: normalizedKakaoPlace.normalizedName ||
+            kakaoLocal.normalizeText(normalizedKakaoPlace.name),
+        category: normalizedKakaoPlace.category,
+        address: normalizedKakaoPlace.address,
+        roadAddress: normalizedKakaoPlace.roadAddress,
+        location: normalizedKakaoPlace.location,
+        externalSource: {
+            provider: 'kakao',
+            externalPlaceId: normalizedKakaoPlace.externalPlaceId,
+            url: normalizedKakaoPlace.placeUrl,
+            rawCategory: normalizedKakaoPlace.rawCategory,
+            lastSyncedAt: new Date()
+        }
+    };
+}
+
+function serializeExternalSearchItem(place, agoPlace) {
+    return {
+        provider: 'kakao',
+        externalPlaceId: place.externalPlaceId,
+        name: place.name,
+        category: place.category,
+        address: place.address,
+        roadAddress: place.roadAddress,
+        location: place.location,
+        phone: place.phone,
+        placeUrl: place.placeUrl,
+        rawCategory: place.rawCategory,
+        normalizedName: place.normalizedName,
+        categoryGroupCode: place.categoryGroupCode,
+        categoryGroupName: place.categoryGroupName,
+        distance: place.distance,
+        withinServiceArea: place.withinServiceArea,
+        agoPlace: agoPlace
+            ? {
+                _id: agoPlace._id,
+                name: agoPlace.name,
+                category: agoPlace.category,
+                address: agoPlace.address,
+                roadAddress: agoPlace.roadAddress,
+                location: agoPlace.location,
+                currentStatus: agoPlace.currentStatus
+            }
+            : null
+    };
+}
 
 router.get('/', async (req, res) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
@@ -202,6 +340,147 @@ router.get('/nearby', async (req, res) => {
     return res.status(200).json({
         success: true,
         data: {places}
+    });
+});
+
+router.get('/external/search', async (req, res) => {
+    try {
+        const result = await kakaoLocal.searchKeyword({
+            query: req.query.q || req.query.query,
+            longitude: req.query.longitude,
+            latitude: req.query.latitude,
+            radius: req.query.radius,
+            rect: req.query.rect,
+            page: req.query.page,
+            size: req.query.size,
+            sort: req.query.sort,
+            includeUnsupported: req.query.includeUnsupported === 'true'
+        });
+
+        const externalIds = result.places.map(
+            (place) => place.externalPlaceId
+        );
+
+        const matchedPlaces = externalIds.length > 0
+            ? await Place.find({
+                externalSources: {
+                    $elemMatch: {
+                        provider: 'kakao',
+                        externalPlaceId: {$in: externalIds}
+                    }
+                }
+            }).lean()
+            : [];
+
+        const matchedByExternalId = new Map(
+            matchedPlaces.map((place) => {
+                const externalSource = toExternalSourceMatch(place);
+                return [
+                    externalSource.externalPlaceId,
+                    place
+                ];
+            })
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                provider: 'kakao',
+                meta: result.meta,
+                items: result.places.map((place) => {
+                    return serializeExternalSearchItem(
+                        place,
+                        matchedByExternalId.get(place.externalPlaceId)
+                    );
+                })
+            }
+        });
+    } catch (err) {
+        return sendExternalPlaceError(res, err);
+    }
+});
+
+router.post('/external/kakao/link', auth, async (req, res) => {
+    const kakaoPlace = req.body.kakaoPlace ||
+        req.body.externalPlace ||
+        req.body;
+
+    const agoPlaceInput = buildAgoPlaceInputFromKakao(kakaoPlace);
+
+    if (!agoPlaceInput) {
+        return res.status(400).json({
+            success: false,
+            error: {
+                code: 'INVALID_KAKAO_PLACE',
+                message: 'Kakao 장소 정보가 올바르지 않습니다.'
+            }
+        });
+    }
+
+    const externalSourceFilter = {
+        externalSources: {
+            $elemMatch: {
+                provider: 'kakao',
+                externalPlaceId: agoPlaceInput.externalSource.externalPlaceId
+            }
+        }
+    };
+
+    const existingPlace = await Place.findOne(externalSourceFilter);
+
+    if (existingPlace) {
+        const externalSource = existingPlace.externalSources.find(
+            (source) => {
+                return source.provider === 'kakao' &&
+                    source.externalPlaceId ===
+                    agoPlaceInput.externalSource.externalPlaceId;
+            }
+        );
+
+        if (externalSource) {
+            externalSource.url = agoPlaceInput.externalSource.url;
+            externalSource.rawCategory =
+                agoPlaceInput.externalSource.rawCategory;
+            externalSource.lastSyncedAt = new Date();
+        }
+
+        if (!existingPlace.roadAddress && agoPlaceInput.roadAddress) {
+            existingPlace.roadAddress = agoPlaceInput.roadAddress;
+        }
+
+        if (!existingPlace.normalizedName) {
+            existingPlace.normalizedName = agoPlaceInput.normalizedName;
+        }
+
+        await existingPlace.save();
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                place: existingPlace,
+                created: false
+            }
+        });
+    }
+
+    const place = await Place.create({
+        name: agoPlaceInput.name,
+        normalizedName: agoPlaceInput.normalizedName,
+        category: agoPlaceInput.category,
+        address: agoPlaceInput.address,
+        roadAddress: agoPlaceInput.roadAddress,
+        location: agoPlaceInput.location,
+        externalSources: [
+            agoPlaceInput.externalSource
+        ]
+    });
+
+    return res.status(201).json({
+        success: true,
+        data: {
+            place,
+            created: true
+        }
     });
 });
 

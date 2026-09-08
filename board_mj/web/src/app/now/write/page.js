@@ -36,6 +36,7 @@ function NowWriteContent() {
     const [placeId, setPlaceId] = useState('');
     const [placeQuery, setPlaceQuery] = useState('');
     const [placeResults, setPlaceResults] = useState([]);
+    const [externalPlaceResults, setExternalPlaceResults] = useState([]);
     const [selectedPlace, setSelectedPlace] = useState(null);
 
     const [status, setStatus] = useState('');
@@ -47,7 +48,9 @@ function NowWriteContent() {
     const [loading, setLoading] = useState(true);
     const [searchingPlaces, setSearchingPlaces] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [linkingPlaceId, setLinkingPlaceId] = useState('');
     const [error, setError] = useState('');
+    const [externalError, setExternalError] = useState('');
 
     useEffect(() => {
         const loadInitialPlace = async () => {
@@ -84,17 +87,38 @@ function NowWriteContent() {
 
         if (!query.trim()) {
             setPlaceResults([]);
+            setExternalPlaceResults([]);
+            setExternalError('');
             return;
         }
 
         try {
             setSearchingPlaces(true);
+            setExternalError('');
 
-            const data = await apiFetch(
-                `/api/places?q=${encodeURIComponent(query)}&limit=10`
-            );
+            const [internalResult, externalResult] =
+                await Promise.allSettled([
+                    apiFetch(
+                        `/api/places?q=${encodeURIComponent(query)}&limit=10`
+                    ),
+                    apiFetch(
+                        `/api/places/external/search?q=${encodeURIComponent(query)}&size=10`
+                    )
+                ]);
 
-            setPlaceResults(data.places || []);
+            if (internalResult.status === 'fulfilled') {
+                setPlaceResults(internalResult.value.places || []);
+            } else {
+                setPlaceResults([]);
+                setError(internalResult.reason.message);
+            }
+
+            if (externalResult.status === 'fulfilled') {
+                setExternalPlaceResults(externalResult.value.items || []);
+            } else {
+                setExternalPlaceResults([]);
+                setExternalError(externalResult.reason.message);
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -145,6 +169,43 @@ function NowWriteContent() {
         const previewUrl = URL.createObjectURL(file);
         setImagePreview(previewUrl);
     }
+
+    const selectExternalPlace = async (externalPlace) => {
+        if (linkingPlaceId) {
+            return;
+        }
+
+        if (externalPlace.agoPlace) {
+            setSelectedPlace(externalPlace.agoPlace);
+            setPlaceId(externalPlace.agoPlace._id);
+            setPlaceQuery(externalPlace.agoPlace.name);
+            setPlaceResults([]);
+            setExternalPlaceResults([]);
+            return;
+        }
+
+        try {
+            setLinkingPlaceId(externalPlace.externalPlaceId);
+            setError('');
+
+            const data = await apiFetch('/api/places/external/kakao/link', {
+                method: 'POST',
+                body: JSON.stringify({
+                    kakaoPlace: externalPlace
+                })
+            });
+
+            setSelectedPlace(data.place);
+            setPlaceId(data.place._id);
+            setPlaceQuery(data.place.name);
+            setPlaceResults([]);
+            setExternalPlaceResults([]);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLinkingPlaceId('');
+        }
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -284,7 +345,8 @@ function NowWriteContent() {
                                 </p>
                             )}
 
-                            {placeResults.length > 0 && (
+                            {(placeResults.length > 0 ||
+                                externalPlaceResults.length > 0) && (
                                 <div className="place-search-results">
                                     {placeResults.map((place) => (
                                         <button
@@ -302,7 +364,45 @@ function NowWriteContent() {
                                             <span>{place.address}</span>
                                         </button>
                                     ))}
+
+                                    {externalPlaceResults
+                                        .filter((place) => {
+                                            return !placeResults.some(
+                                                (internalPlace) => {
+                                                    return internalPlace._id ===
+                                                        place.agoPlace?._id;
+                                                }
+                                            );
+                                        })
+                                        .map((place) => (
+                                            <button
+                                                key={`kakao:${place.externalPlaceId}`}
+                                                type="button"
+                                                className="place-search-item"
+                                                onClick={() => selectExternalPlace(place)}
+                                                disabled={
+                                                    linkingPlaceId ===
+                                                    place.externalPlaceId
+                                                }
+                                            >
+                                                <strong>
+                                                    {place.name}
+                                                    {' '}
+                                                    <small>Kakao</small>
+                                                </strong>
+                                                <span>
+                                                    {place.roadAddress ||
+                                                        place.address}
+                                                </span>
+                                            </button>
+                                        ))}
                                 </div>
+                            )}
+
+                            {externalError && (
+                                <p className="now-write-search-message">
+                                    외부 장소 검색: {externalError}
+                                </p>
                             )}
                         </>
                     ) : (

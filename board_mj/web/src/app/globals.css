@@ -1919,9 +1919,31 @@ main {
 }
 
 .places-map-card-link {
+    width: fit-content;
+
+    padding: 0;
+
+    background: transparent;
     color: var(--ago-text);
 
+    border: 0;
+
     font-size: 10px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.places-map-card-link:disabled {
+    color: var(--ago-muted);
+
+    cursor: default;
+}
+
+.place-search-item small {
+    color: var(--ago-muted);
+
+    font-size: 9px;
     font-weight: 800;
 }
 

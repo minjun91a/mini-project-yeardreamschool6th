@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from 'react';
 import Link from 'next/link';
+import {useRouter} from 'next/navigation';
 import {apiFetch} from '@/lib/api';
 import dynamic from "next/dynamic";
 
@@ -13,6 +14,8 @@ const CATEGORY_LABEL = {
     shopping: '쇼핑',
     park: '공원',
     culture: '문화',
+    street: '거리',
+    other: '기타',
     etc: '기타',
 };
 
@@ -25,6 +28,7 @@ const CATEGORY_FILTERS = [
     {value: 'shopping', label: '쇼핑'},
     {value: 'park', label: '공원'},
     {value: 'culture', label: '문화'},
+    {value: 'other', label: '기타'},
 ];
 
 const PlacesMap = dynamic(
@@ -35,11 +39,15 @@ const PlacesMap = dynamic(
 );
 
 export default function PlacesPage() {
+    const router = useRouter();
     const [query, setQuery] = useState('');
     const [places, setPlaces] = useState([]);
+    const [externalPlaces, setExternalPlaces] = useState([]);
     const [loading, setLoading] = useState(false);
     const [locationLoading, setLocationLoading] = useState(false);
+    const [linkingPlaceId, setLinkingPlaceId] = useState('');
     const [error, setError] = useState('');
+    const [externalError, setExternalError] = useState('');
     const [userLocation, setUserLocation] = useState(null);
     const [selectedPlace, setSelectedPlace] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -47,19 +55,44 @@ export default function PlacesPage() {
     useEffect(() => {
         if (!query.trim()) {
             setPlaces([]);
+            setExternalPlaces([]);
+            setExternalError('');
             return;
         }
 
         const timer = setTimeout(async () => {
+            const trimmedQuery = query.trim();
+
             try {
                 setLoading(true);
+                setError('');
+                setExternalError('');
                 setUserLocation(null);
+                setSelectedPlace(null);
 
-                const data = await apiFetch(
-                    `/api/places?q=${encodeURIComponent(query.trim())}`
-                );
+                const [internalResult, externalResult] =
+                    await Promise.allSettled([
+                        apiFetch(
+                            `/api/places?q=${encodeURIComponent(trimmedQuery)}`
+                        ),
+                        apiFetch(
+                            `/api/places/external/search?q=${encodeURIComponent(trimmedQuery)}`
+                        )
+                    ]);
 
-                setPlaces(data.places || []);
+                if (internalResult.status === 'fulfilled') {
+                    setPlaces(internalResult.value.places || []);
+                } else {
+                    setPlaces([]);
+                    setError(internalResult.reason.message);
+                }
+
+                if (externalResult.status === 'fulfilled') {
+                    setExternalPlaces(externalResult.value.items || []);
+                } else {
+                    setExternalPlaces([]);
+                    setExternalError(externalResult.reason.message);
+                }
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -94,6 +127,8 @@ export default function PlacesPage() {
                     );
 
                     setPlaces(data.places || []);
+                    setExternalPlaces([]);
+                    setExternalError('');
                 } catch (err) {
                     setError(err.message);
                 } finally {
@@ -113,6 +148,73 @@ export default function PlacesPage() {
             : places.filter(
                 (place) => place.category === selectedCategory
             );
+
+    const externalDisplayPlaces = externalPlaces
+        .map((place) => {
+            const agoPlace = place.agoPlace;
+
+            if (agoPlace) {
+                return {
+                    ...agoPlace,
+                    externalPlaceId: place.externalPlaceId,
+                    provider: place.provider,
+                    isExternalResult: false,
+                    isMatchedExternalResult: true
+                };
+            }
+
+            return {
+                _id: `kakao:${place.externalPlaceId}`,
+                externalPlaceId: place.externalPlaceId,
+                provider: place.provider,
+                name: place.name,
+                category: place.category,
+                address: place.address,
+                roadAddress: place.roadAddress,
+                location: place.location,
+                placeUrl: place.placeUrl,
+                rawCategory: place.rawCategory,
+                isExternalResult: true,
+                kakaoPlace: place
+            };
+        })
+        .filter((place) => {
+            return selectedCategory === 'all' ||
+                place.category === selectedCategory;
+        });
+
+    const displayedPlaces = [
+        ...filteredPlaces,
+        ...externalDisplayPlaces.filter((externalPlace) => {
+            return !filteredPlaces.some((place) => {
+                return place._id === externalPlace._id;
+            });
+        })
+    ];
+
+    async function linkExternalPlace(place) {
+        if (!place?.kakaoPlace || linkingPlaceId) {
+            return;
+        }
+
+        try {
+            setLinkingPlaceId(place.externalPlaceId);
+            setError('');
+
+            const data = await apiFetch('/api/places/external/kakao/link', {
+                method: 'POST',
+                body: JSON.stringify({
+                    kakaoPlace: place.kakaoPlace
+                })
+            });
+
+            router.push(`/places/${data.place._id}`);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLinkingPlaceId('');
+        }
+    }
 
     return (
         <main className="places-page">
@@ -170,13 +272,13 @@ export default function PlacesPage() {
 
                 <div className="places-map">
                     <PlacesMap
-                        places={filteredPlaces}
+                        places={displayedPlaces}
                         userLocation={userLocation}
                         selectedPlace={selectedPlace}
                         onSelectPlace={setSelectedPlace}
                     />
 
-                    {selectedPlace && (
+                    {selectedPlace && !selectedPlace.isExternalResult && (
                         <Link
                             href={`/places/${selectedPlace._id}`}
                             className="places-map-card"
@@ -214,6 +316,50 @@ export default function PlacesPage() {
                         </Link>
                     )}
 
+                    {selectedPlace?.isExternalResult && (
+                        <article className="places-map-card">
+                            <div className="places-map-card-main">
+                                <div className="places-map-card-title-row">
+                                    <strong>{selectedPlace.name}</strong>
+
+                                    <span className="places-map-card-distance">
+                                        Kakao
+                                    </span>
+                                </div>
+
+                                <div className="places-map-card-tags">
+                                    <span className="places-map-card-category">
+                                        {CATEGORY_LABEL[selectedPlace.category] ||
+                                            selectedPlace.category}
+                                    </span>
+
+                                    <span className="places-map-card-status">
+                                        아직 정보 없음
+                                    </span>
+                                </div>
+
+                                <p>
+                                    {selectedPlace.roadAddress ||
+                                        selectedPlace.address}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    className="places-map-card-link"
+                                    onClick={() => linkExternalPlace(selectedPlace)}
+                                    disabled={
+                                        linkingPlaceId ===
+                                        selectedPlace.externalPlaceId
+                                    }
+                                >
+                                    {linkingPlaceId === selectedPlace.externalPlaceId
+                                        ? '연결 중...'
+                                        : 'ago 장소로 연결'}
+                                </button>
+                            </div>
+                        </article>
+                    )}
+
                     <button
                         type="button"
                         className="places-location-button"
@@ -243,6 +389,12 @@ export default function PlacesPage() {
             {error && (
                 <p className="places-error">
                     {error}
+                </p>
+            )}
+
+            {externalError && !error && (
+                <p className="places-error">
+                    외부 장소 검색: {externalError}
                 </p>
             )}
 
