@@ -6,6 +6,7 @@ const Confirmation = require('../models/confirmation');
 const Place = require('../models/place');
 const PlaceUpdate = require('../models/placeUpdate');
 const QuickSignal = require('../models/quickSignal');
+const PlaceStatus = require('../models/placeStatus');
 const {getDistanceMeters} = require('../services/geo');
 const {
     calculatePlaceStatusSafely
@@ -67,7 +68,12 @@ function toClientConfirmation(confirmation) {
     };
 }
 
-async function ensureTargetMatchesPlace({placeId, placeUpdateId, quickSignalId}) {
+async function ensureTargetMatchesPlace({
+    placeId,
+    placeUpdateId,
+    quickSignalId,
+    placeStatusId
+}) {
     if (placeUpdateId) {
         if (!mongoose.isValidObjectId(placeUpdateId)) {
             return {
@@ -118,6 +124,35 @@ async function ensureTargetMatchesPlace({placeId, placeUpdateId, quickSignalId})
         }
 
         if (quickSignal.place.toString() !== placeId) {
+            return {
+                status: 400,
+                code: 'TARGET_PLACE_MISMATCH',
+                message: '확인 대상과 장소가 일치하지 않습니다.'
+            };
+        }
+    }
+
+    if (placeStatusId) {
+        if (!mongoose.isValidObjectId(placeStatusId)) {
+            return {
+                status: 400,
+                code: 'INVALID_PLACE_STATUS_ID',
+                message: '올바르지 않은 장소 상태 ID입니다.'
+            };
+        }
+
+        const placeStatus = await PlaceStatus.findById(placeStatusId)
+            .select('_id place');
+
+        if (!placeStatus) {
+            return {
+                status: 404,
+                code: 'PLACE_STATUS_NOT_FOUND',
+                message: '장소 상태를 찾을 수 없습니다.'
+            };
+        }
+
+        if (placeStatus.place.toString() !== placeId) {
             return {
                 status: 400,
                 code: 'TARGET_PLACE_MISMATCH',
@@ -250,7 +285,8 @@ router.post('/', auth, async (req, res) => {
     const targetError = await ensureTargetMatchesPlace({
         placeId,
         placeUpdateId,
-        quickSignalId
+        quickSignalId,
+        placeStatusId
     });
 
     if (targetError) {

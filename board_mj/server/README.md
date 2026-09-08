@@ -119,6 +119,7 @@ Base URL: `http://localhost`
 - `/api/places/now/latest`와 `/api/places/:id/now`는 `PlaceUpdate`, `QuickSignal`, legacy `Post(kind='now')`를 함께 반환한다.
 - 새 현장 Evidence가 생성되면 deterministic Core Engine v1이 `PlaceStatus`를 생성하고 `Place.currentStatus` snapshot을 갱신한다.
 - 기존 now post 백필은 `node src/scripts/migrateNowPostsToPlaceUpdates.js`로 실행한다. 이 스크립트는 `legacyPost` 기준으로 중복을 방지한다.
+- Confirmation index를 partial unique 구조로 동기화하려면 `node src/scripts/syncConfirmationIndexes.js`를 실행한다.
 
 ### 댓글
 

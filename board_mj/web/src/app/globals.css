@@ -690,6 +690,11 @@ main {
     color: var(--ago-red-text);
 }
 
+.now-status.unknown {
+    background: #F3F4EE;
+    color: var(--ago-muted);
+}
+
 .home-now-tag {
     background: #F5F5F0;
     color: var(--ago-text);
@@ -1014,6 +1019,124 @@ main {
 
     font-size: 8px;
     font-weight: 750;
+}
+
+/* ---------- CURRENT STATUS ---------- */
+
+.place-detail-current {
+    padding: 16px 14px 15px;
+
+    border-bottom: 1px solid var(--ago-border);
+}
+
+.place-detail-current-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.place-detail-current-main h2 {
+    margin: 0;
+
+    color: var(--ago-text);
+
+    font-size: 21px;
+    font-weight: 900;
+    letter-spacing: 0;
+    line-height: 1.2;
+}
+
+.place-detail-current-main p {
+    margin: 0;
+
+    color: var(--ago-muted);
+
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.place-detail-current-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+
+    margin-top: 14px;
+}
+
+.place-detail-current-metrics div {
+    min-height: 58px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+
+    padding: 9px 10px;
+
+    background: #F7F7F2;
+
+    border: 1px solid var(--ago-border);
+    border-radius: 8px;
+}
+
+.place-detail-current-metrics strong {
+    color: var(--ago-text);
+
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.place-detail-current-metrics span {
+    color: var(--ago-muted);
+
+    font-size: 8px;
+    font-weight: 750;
+}
+
+.place-detail-current-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    margin-top: 10px;
+}
+
+.place-detail-current-meta span {
+    min-height: 22px;
+
+    display: inline-flex;
+    align-items: center;
+
+    padding: 0 8px;
+
+    background: #F5F5F0;
+    color: var(--ago-muted);
+
+    border-radius: 999px;
+
+    font-size: 8px;
+    font-weight: 750;
+}
+
+.place-detail-current-cta {
+    width: 100%;
+    min-height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 13px;
+
+    background: var(--ago-text);
+    color: #FFFFFF;
+
+    border-radius: 10px;
+
+    font-size: 11px;
+    font-weight: 850;
 }
 
 /* ---------- CONFIRMATION ---------- */
@@ -1406,6 +1529,20 @@ main {
     font-size: 9px;
 }
 
+.place-detail-feed-head {
+    padding: 14px 14px 0;
+}
+
+.place-detail-feed-head h2 {
+    margin: 0;
+
+    color: var(--ago-text);
+
+    font-size: 13px;
+    font-weight: 850;
+    letter-spacing: 0;
+}
+
 /* ---------- PLACE HISTORY ---------- */
 
 .place-detail-history {
@@ -1478,6 +1615,10 @@ main {
 
 .place-detail-history-dot.busy {
     background: var(--ago-red-text);
+}
+
+.place-detail-history-dot.unknown {
+    background: var(--ago-muted);
 }
 
 .place-detail-history-rail {

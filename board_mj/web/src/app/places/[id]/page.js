@@ -8,7 +8,22 @@ import Link from "next/link";
 const STATUS_LABEL = {
     quiet: '🟢 여유',
     normal: '🟡 보통',
-    busy: '🔴 혼잡'
+    busy: '🔴 혼잡',
+    unknown: '정보 부족'
+};
+
+const STATUS_TITLE = {
+    quiet: '여유로워 보여요',
+    normal: '보통 수준이에요',
+    busy: '혼잡해 보여요',
+    unknown: '아직 판단할 정보가 부족해요'
+};
+
+const TREND_LABEL = {
+    rising: '혼잡도가 올라가는 중',
+    falling: '혼잡도가 내려가는 중',
+    stable: '비슷하게 유지 중',
+    unknown: '변화 판단 전'
 };
 
 const CATEGORY_LABEL = {
@@ -55,6 +70,56 @@ function getItemDetailHref(item, placeId) {
     return `/places/${placeId}`;
 }
 
+function formatScore(score) {
+    const value = Number(score);
+
+    if (!Number.isFinite(value)) {
+        return 0;
+    }
+
+    return Math.round(value * 100);
+}
+
+function getFreshnessLabel(score) {
+    const percent = formatScore(score);
+
+    if (percent >= 70) {
+        return '현재성이 높아요';
+    }
+
+    if (percent >= 35) {
+        return '조금 더 확인하면 좋아요';
+    }
+
+    return '새 정보가 필요해요';
+}
+
+function getConfidenceLabel(score) {
+    const percent = formatScore(score);
+
+    if (percent >= 70) {
+        return '신뢰도가 높아요';
+    }
+
+    if (percent >= 35) {
+        return '판단 근거가 쌓이는 중';
+    }
+
+    return '근거가 부족해요';
+}
+
+function getEvidenceTypeLabel(type) {
+    if (type === 'QuickSignal') {
+        return '빠른 신호';
+    }
+
+    if (type === 'PlaceUpdate') {
+        return '현장 기록';
+    }
+
+    return '기존 기록';
+}
+
 export default function PlaceDetailPage() {
     const params = useParams();
     const id = params.id;
@@ -64,6 +129,8 @@ export default function PlaceDetailPage() {
 
     const [place, setPlace] = useState(null);
     const [items, setItems] = useState([]);
+    const [placeStatus, setPlaceStatus] = useState(null);
+    const [placeStatusHistory, setPlaceStatusHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [confirmationLoading, setConfirmationLoading] = useState('');
@@ -72,11 +139,22 @@ export default function PlaceDetailPage() {
     useEffect(() => {
         const loadPlace = async () => {
             try {
-                const placeData = await apiFetch(`/api/places/${id}`);
-                const nowData = await apiFetch(`/api/places/${id}/now`);
+                const [
+                    placeData,
+                    nowData,
+                    currentStatusData,
+                    statusHistoryData
+                ] = await Promise.all([
+                    apiFetch(`/api/places/${id}`),
+                    apiFetch(`/api/places/${id}/now`),
+                    apiFetch(`/api/place-statuses/current?place=${id}`),
+                    apiFetch(`/api/place-statuses?place=${id}&limit=8`)
+                ]);
 
-                setPlace(placeData.place);
+                setPlace(currentStatusData.place || placeData.place);
                 setItems(nowData.items);
+                setPlaceStatus(currentStatusData.placeStatus);
+                setPlaceStatusHistory(statusHistoryData.items || []);
 
                 const token = localStorage.getItem('token');
 
@@ -114,14 +192,6 @@ export default function PlaceDetailPage() {
     }
 
     const latestPost = items.length > 0 ? items[0] : null;
-    const historyItems = items.filter((post, index, array) => {
-        if (index === 0) {
-            return true;
-        }
-
-        return post.status !== array[index - 1].status;
-    }).slice(0, 5);
-
     const recentVerifiedUsers = items
         .filter((post) => {
             if (!post.visitVerified || !post.author?._id) {
@@ -149,8 +219,14 @@ export default function PlaceDetailPage() {
             ? latestPost
             : null;
 
+    const currentStatus = placeStatus || place.currentStatus || null;
+    const currentStatusValue = currentStatus?.status || 'unknown';
+    const hasKnownStatus = currentStatusValue !== 'unknown';
+    const freshnessPercent = formatScore(currentStatus?.freshnessScore);
+    const confidencePercent = formatScore(currentStatus?.confidenceScore);
+
     const handleConfirmation = async (type) => {
-        if (!latestNow || confirmationLoading) {
+        if ((!latestNow && !placeStatus) || confirmationLoading) {
             return;
         }
 
@@ -159,11 +235,13 @@ export default function PlaceDetailPage() {
             type
         };
 
-        if (latestNow.evidenceType === 'PlaceUpdate') {
+        if (placeStatus?._id) {
+            body.placeStatusId = placeStatus._id;
+        } else if (latestNow?.evidenceType === 'PlaceUpdate') {
             body.placeUpdateId = latestNow._id;
         }
 
-        if (latestNow.evidenceType === 'QuickSignal') {
+        if (!placeStatus?._id && latestNow?.evidenceType === 'QuickSignal') {
             body.quickSignalId = latestNow._id;
         }
 
@@ -171,10 +249,37 @@ export default function PlaceDetailPage() {
             setConfirmationLoading(type);
             setConfirmationMessage('');
 
-            await apiFetch('/api/confirmations', {
+            const data = await apiFetch('/api/confirmations', {
                 method: 'POST',
                 body: JSON.stringify(body)
             });
+
+            if (data.placeStatus) {
+                setPlaceStatus(data.placeStatus);
+                setPlaceStatusHistory((prev) => [
+                    data.placeStatus,
+                    ...prev
+                ].slice(0, 8));
+                setPlace((prev) => {
+                    if (!prev) {
+                        return prev;
+                    }
+
+                    return {
+                        ...prev,
+                        currentStatus: {
+                            status: data.placeStatus.status,
+                            confidenceScore: data.placeStatus.confidenceScore,
+                            freshnessScore: data.placeStatus.freshnessScore,
+                            trend: data.placeStatus.trend,
+                            lastSignalAt: data.placeStatus.freshestEvidenceAt,
+                            freshestEvidenceAt: data.placeStatus.freshestEvidenceAt,
+                            calculatedAt: data.placeStatus.calculatedAt,
+                            placeStatusId: data.placeStatus._id
+                        }
+                    };
+                });
+            }
 
             setConfirmationMessage(
                 type === 'still_valid'
@@ -269,15 +374,73 @@ export default function PlaceDetailPage() {
                     </div>
                 </header>
 
-                {latestNow && (
+                <section className={`place-detail-current ${currentStatusValue}`}>
+                    <div className="place-detail-current-main">
+                        <span className={`now-status ${currentStatusValue}`}>
+                            {STATUS_LABEL[currentStatusValue] || currentStatusValue}
+                        </span>
+
+                        <h2>
+                            {STATUS_TITLE[currentStatusValue] ||
+                                '현재 상태를 계산 중이에요'}
+                        </h2>
+
+                        <p>
+                            {hasKnownStatus
+                                ? `${getFreshnessLabel(currentStatus?.freshnessScore)} · ${getConfidenceLabel(currentStatus?.confidenceScore)}`
+                                : '최근 현장 Evidence가 부족해서 현재 상태를 추측하지 않습니다.'}
+                        </p>
+                    </div>
+
+                    <div className="place-detail-current-metrics">
+                        <div>
+                            <strong>{freshnessPercent}%</strong>
+                            <span>Freshness</span>
+                        </div>
+
+                        <div>
+                            <strong>{confidencePercent}%</strong>
+                            <span>Confidence</span>
+                        </div>
+
+                        <div>
+                            <strong>{currentStatus?.evidenceCount || 0}</strong>
+                            <span>Evidence</span>
+                        </div>
+                    </div>
+
+                    <div className="place-detail-current-meta">
+                        <span>
+                            {TREND_LABEL[currentStatus?.trend || 'unknown'] ||
+                                currentStatus?.trend}
+                        </span>
+
+                        {currentStatus?.freshestEvidenceAt && (
+                            <span>
+                                최신 근거 {formatRelativeTime(currentStatus.freshestEvidenceAt)}
+                            </span>
+                        )}
+                    </div>
+
+                    {!hasKnownStatus && (
+                        <Link
+                            href={`/now/write?placeId=${id}`}
+                            className="place-detail-current-cta"
+                        >
+                            지금 알리기
+                        </Link>
+                    )}
+                </section>
+
+                {(latestNow || placeStatus) && (
                     <section className="place-detail-confirmation">
                         <div className="place-detail-section-head">
                             <div>
                                 <h2>이 정보가 아직 맞나요?</h2>
                                 <p>
-                                    {formatRelativeTime(getItemTime(latestNow))}
-                                    {' '}
-                                    기준 현장 정보를 확인해주세요.
+                                    {placeStatus?.calculatedAt
+                                        ? `${formatRelativeTime(placeStatus.calculatedAt)} 계산된 상태를 확인해주세요.`
+                                        : `${formatRelativeTime(getItemTime(latestNow))} 기준 현장 정보를 확인해주세요.`}
                                 </p>
                             </div>
                         </div>
@@ -354,46 +517,45 @@ export default function PlaceDetailPage() {
                 <section className="place-detail-history">
                     <div className="place-detail-section-head">
                         <div>
-                            <h2>최근 현장 기록</h2>
-                            <p>이 장소의 최근 상태 변화를 확인해보세요.</p>
+                            <h2>상태 변화</h2>
+                            <p>Core Engine이 계산한 장소 상태 이력입니다.</p>
                         </div>
                     </div>
 
-                    {historyItems.length === 0 ? (
+                    {placeStatusHistory.length === 0 ? (
                         <div className="place-detail-history-empty">
-                            아직 쌓인 현장 기록이 없습니다.
+                            아직 계산된 상태 이력이 없습니다.
                         </div>
                     ) : (
                         <div className="place-detail-history-list">
-                            {historyItems.map((post, index) => (
+                            {placeStatusHistory.map((statusItem, index) => (
                                 <div
-                                    key={post._id}
+                                    key={statusItem._id}
                                     className="place-detail-history-item"
                                 >
                                     <div className="place-detail-history-line">
                                         <span
-                                            className={`place-detail-history-dot ${post.status}`}
+                                            className={`place-detail-history-dot ${statusItem.status}`}
                                         />
 
-                                        {index < historyItems.length - 1 && (
+                                        {index < placeStatusHistory.length - 1 && (
                                             <span className="place-detail-history-rail" />
                                         )}
                                     </div>
 
                                     <div className="place-detail-history-content">
-                                        <span className={`now-status ${post.status}`}>
-                                            {STATUS_LABEL[post.status] || post.status}
+                                        <span className={`now-status ${statusItem.status}`}>
+                                            {STATUS_LABEL[statusItem.status] ||
+                                                statusItem.status}
                                         </span>
 
                                         <span className="place-detail-history-time">
-                                            {formatRelativeTime(getItemTime(post))}
+                                            {formatRelativeTime(statusItem.calculatedAt)}
                                         </span>
 
-                                        {post.author?.name && (
-                                            <span className="place-detail-history-author">
-                                                {post.author.name}
-                                            </span>
-                                        )}
+                                        <span className="place-detail-history-author">
+                                            신뢰 {formatScore(statusItem.confidenceScore)}%
+                                        </span>
                                     </div>
                                 </div>
                             ))}
@@ -402,6 +564,12 @@ export default function PlaceDetailPage() {
                 </section>
 
                 <section className="place-detail-feed">
+                    {items.length > 0 && (
+                        <div className="place-detail-feed-head">
+                            <h2>현장 Evidence</h2>
+                        </div>
+                    )}
+
                     {items.length === 0 && (
                         <div className="place-detail-empty">
                             아직 등록된 현장 정보가 없습니다.
@@ -426,7 +594,9 @@ export default function PlaceDetailPage() {
                                             </strong>
 
                                             <span>
-                                                · {post.visitVerified ? '현장' : 'NOW'}
+                                                · {post.visitVerified
+                                                    ? '현장 인증'
+                                                    : getEvidenceTypeLabel(post.evidenceType)}
                                             </span>
                                         </div>
 
