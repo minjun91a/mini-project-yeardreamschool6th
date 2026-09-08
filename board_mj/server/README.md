@@ -105,14 +105,19 @@ Base URL: `http://localhost`
 | POST | `/api/quick-signals` | ✔ | `{placeId, status, observedAt?, longitude?, latitude?}` | 201 `{quickSignal}` | 400, 401, 404 |
 | GET | `/api/confirmations` | - | `?place&page&limit` | 200 `{items, page, limit, total}` | 400 |
 | POST | `/api/confirmations` | ✔ | `{placeId, type, placeUpdateId?, quickSignalId?, placeStatusId?, observedAt?, longitude?, latitude?}` | 201 `{confirmation}` | 400, 401, 404, 409 |
+| GET | `/api/place-statuses` | - | `?place&page&limit` | 200 `{items, page, limit, total}` | 400 |
+| GET | `/api/place-statuses/current` | - | `?place` | 200 `{place, placeStatus}` | 400, 404 |
+| POST | `/api/place-statuses/recalculate` | ✔ | `{placeId}` | 200 `{placeStatus}` | 400, 401, 404 |
 
 - `PlaceUpdate`는 `Post(kind='now')`를 대체하는 장소 중심 Evidence 모델이다.
 - 필수 입력은 `placeId + status`이며, `content`, `originalText`, `image`는 선택이다.
 - `QuickSignal`은 설명/이미지 없이 상태만 남기는 1-tap Evidence 모델이다.
 - `Confirmation`은 기존 Evidence가 `still_valid`인지 `changed`인지 확인하는 모델이다.
+- `PlaceStatus`는 `PlaceUpdate`, `QuickSignal`, `Confirmation`을 Freshness/Trust로 계산한 현재 상태 이력이다.
 - `observedAt`과 `createdAt`을 분리한다. `observedAt`이 없으면 서버 현재 시각을 사용한다.
 - `visitVerified`는 사용자가 보낸 좌표와 장소 좌표의 300m 이내 여부로 계산한다.
 - `/api/places/now/latest`와 `/api/places/:id/now`는 `PlaceUpdate`, `QuickSignal`, legacy `Post(kind='now')`를 함께 반환한다.
+- 새 현장 Evidence가 생성되면 deterministic Core Engine v1이 `PlaceStatus`를 생성하고 `Place.currentStatus` snapshot을 갱신한다.
 - 기존 now post 백필은 `node src/scripts/migrateNowPostsToPlaceUpdates.js`로 실행한다. 이 스크립트는 `legacyPost` 기준으로 중복을 방지한다.
 
 ### 댓글

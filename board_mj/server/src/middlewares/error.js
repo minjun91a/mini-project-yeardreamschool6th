@@ -23,6 +23,12 @@ module.exports = (err, req, res, next) => {
             error: {code: 'DUPLICATE', message: '이미 사용 중인 값입니다.'}
         });
     }
+    if (err.status && err.code) {
+        return res.status(err.status).json({
+            success: false,
+            error: {code: err.code, message: err.message}
+        });
+    }
 
     console.error('[미분류 에러]', err.name);
 

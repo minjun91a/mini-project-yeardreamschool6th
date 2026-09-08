@@ -5,6 +5,9 @@ const auth = require('../middlewares/auth');
 const Place = require('../models/place');
 const QuickSignal = require('../models/quickSignal');
 const {getDistanceMeters} = require('../services/geo');
+const {
+    calculatePlaceStatusSafely
+} = require('../services/placeStatusEngine');
 
 const ALLOWED_STATUSES = [
     'quiet',
@@ -213,6 +216,8 @@ router.post('/', auth, async (req, res) => {
         }
     );
 
+    const placeStatus = await calculatePlaceStatusSafely(placeId);
+
     await quickSignal.populate([
         {
             path: 'author',
@@ -227,7 +232,8 @@ router.post('/', auth, async (req, res) => {
     return res.status(201).json({
         success: true,
         data: {
-            quickSignal: toClientQuickSignal(quickSignal.toObject())
+            quickSignal: toClientQuickSignal(quickSignal.toObject()),
+            placeStatus
         }
     });
 });

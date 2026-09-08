@@ -7,6 +7,9 @@ const Place = require('../models/place');
 const PlaceUpdate = require('../models/placeUpdate');
 const QuickSignal = require('../models/quickSignal');
 const {getDistanceMeters} = require('../services/geo');
+const {
+    calculatePlaceStatusSafely
+} = require('../services/placeStatusEngine');
 
 const ALLOWED_TYPES = [
     'still_valid',
@@ -290,6 +293,8 @@ router.post('/', auth, async (req, res) => {
         }
     );
 
+    const placeStatus = await calculatePlaceStatusSafely(placeId);
+
     await confirmation.populate([
         {
             path: 'author',
@@ -304,7 +309,8 @@ router.post('/', auth, async (req, res) => {
     return res.status(201).json({
         success: true,
         data: {
-            confirmation: toClientConfirmation(confirmation.toObject())
+            confirmation: toClientConfirmation(confirmation.toObject()),
+            placeStatus
         }
     });
 });

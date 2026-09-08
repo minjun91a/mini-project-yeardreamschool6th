@@ -6,6 +6,9 @@ const upload = require('../middlewares/upload');
 const Place = require('../models/place');
 const PlaceUpdate = require('../models/placeUpdate');
 const {getDistanceMeters} = require('../services/geo');
+const {
+    calculatePlaceStatusSafely
+} = require('../services/placeStatusEngine');
 
 const ALLOWED_STATUSES = [
     'quiet',
@@ -275,6 +278,8 @@ router.post('/', auth, uploadSingleImage, async (req, res) => {
         }
     );
 
+    const placeStatus = await calculatePlaceStatusSafely(placeId);
+
     await placeUpdate.populate([
         {
             path: 'author',
@@ -289,7 +294,8 @@ router.post('/', auth, uploadSingleImage, async (req, res) => {
     return res.status(201).json({
         success: true,
         data: {
-            placeUpdate: toClientPlaceUpdate(placeUpdate.toObject())
+            placeUpdate: toClientPlaceUpdate(placeUpdate.toObject()),
+            placeStatus
         }
     });
 });
