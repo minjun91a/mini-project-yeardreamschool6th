@@ -46,6 +46,10 @@ const STATUS_FILTERS = [
     {value: 'unknown', label: '정보 없음'}
 ];
 
+function getCategoryParam(category) {
+    return category === 'all' ? null : category;
+}
+
 function formatScore(score) {
     const value = Number(score);
 
@@ -82,9 +86,29 @@ export default function PlacesPage() {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
 
+    async function loadNearbyPlacesForLocation(location) {
+        const params = new URLSearchParams({
+            longitude: String(location.longitude),
+            latitude: String(location.latitude),
+            maxDistance: '3000',
+            includeExternal: 'true'
+        });
+
+        const category = getCategoryParam(selectedCategory);
+
+        if (category) {
+            params.set('category', category);
+        }
+
+        const data = await apiFetch(`/api/places/nearby?${params}`);
+
+        setPlaces(data.places || []);
+        setExternalPlaces(data.externalPlaces || []);
+        setExternalError(data.externalError?.message || '');
+    }
+
     useEffect(() => {
         if (!query.trim()) {
-            setPlaces([]);
             setExternalPlaces([]);
             setExternalError('');
             return;
@@ -92,12 +116,26 @@ export default function PlacesPage() {
 
         const timer = setTimeout(async () => {
             const trimmedQuery = query.trim();
+            const externalSearchParams = new URLSearchParams({
+                q: trimmedQuery
+            });
+
+            if (userLocation) {
+                externalSearchParams.set(
+                    'longitude',
+                    String(userLocation.longitude)
+                );
+                externalSearchParams.set(
+                    'latitude',
+                    String(userLocation.latitude)
+                );
+                externalSearchParams.set('sort', 'distance');
+            }
 
             try {
                 setLoading(true);
                 setError('');
                 setExternalError('');
-                setUserLocation(null);
                 setSelectedPlace(null);
 
                 const [internalResult, externalResult] =
@@ -106,7 +144,7 @@ export default function PlacesPage() {
                             `/api/places?q=${encodeURIComponent(trimmedQuery)}`
                         ),
                         apiFetch(
-                            `/api/places/external/search?q=${encodeURIComponent(trimmedQuery)}`
+                            `/api/places/external/search?${externalSearchParams}`
                         )
                     ]);
 
@@ -131,7 +169,106 @@ export default function PlacesPage() {
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [query]);
+    }, [query, userLocation]);
+
+    useEffect(() => {
+        if (query.trim() || userLocation) {
+            return;
+        }
+
+        let ignore = false;
+
+        async function loadPlacesByCategory() {
+            try {
+                setLoading(true);
+                setError('');
+                setExternalError('');
+                setSelectedPlace(null);
+
+                const params = new URLSearchParams({
+                    limit: '100'
+                });
+
+                if (selectedCategory !== 'all') {
+                    params.set('category', selectedCategory);
+                }
+
+                const data = await apiFetch(`/api/places?${params}`);
+
+                if (!ignore) {
+                    setPlaces(data.places || []);
+                }
+            } catch (err) {
+                if (!ignore) {
+                    setError(err.message);
+                    setPlaces([]);
+                }
+            } finally {
+                if (!ignore) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        loadPlacesByCategory();
+
+        return () => {
+            ignore = true;
+        };
+    }, [query, selectedCategory, userLocation]);
+
+    useEffect(() => {
+        if (!userLocation || query.trim()) {
+            return;
+        }
+
+        let ignore = false;
+
+        async function reloadNearbyPlacesByCategory() {
+            try {
+                setLocationLoading(true);
+                setError('');
+                setSelectedPlace(null);
+
+                const params = new URLSearchParams({
+                    longitude: String(userLocation.longitude),
+                    latitude: String(userLocation.latitude),
+                    maxDistance: '3000',
+                    includeExternal: 'true'
+                });
+
+                const category = getCategoryParam(selectedCategory);
+
+                if (category) {
+                    params.set('category', category);
+                }
+
+                const data = await apiFetch(`/api/places/nearby?${params}`);
+
+                if (!ignore) {
+                    setPlaces(data.places || []);
+                    setExternalPlaces(data.externalPlaces || []);
+                    setExternalError(data.externalError?.message || '');
+                }
+            } catch (err) {
+                if (!ignore) {
+                    setError(err.message);
+                    setPlaces([]);
+                    setExternalPlaces([]);
+                }
+            } finally {
+                if (!ignore) {
+                    setLocationLoading(false);
+                }
+            }
+        }
+
+        reloadNearbyPlacesByCategory();
+
+        return () => {
+            ignore = true;
+        };
+    }, [selectedCategory, userLocation, query]);
 
     function loadNearbyPlaces() {
         if (!navigator.geolocation) {
@@ -152,13 +289,10 @@ export default function PlacesPage() {
                         longitude,
                     });
 
-                    const data = await apiFetch(
-                        `/api/places/nearby?longitude=${longitude}&latitude=${latitude}&maxDistance=3000`
-                    );
-
-                    setPlaces(data.places || []);
-                    setExternalPlaces([]);
-                    setExternalError('');
+                    await loadNearbyPlacesForLocation({
+                        latitude,
+                        longitude
+                    });
                 } catch (err) {
                     setError(err.message);
                 } finally {

@@ -124,6 +124,7 @@ Base URL: `http://localhost`
 - `visitVerified`는 사용자가 보낸 좌표와 장소 좌표의 300m 이내 여부로 계산한다.
 - `/api/places/now/latest`와 `/api/places/:id/now`는 `PlaceUpdate`, `QuickSignal`, legacy `Post(kind='now')`를 함께 반환한다.
 - `/api/places/live-statuses`는 현재 계산된 상태가 유효한 장소를 최신순으로 반환하며 NOW v2의 기본 데이터로 사용한다.
+- `/api/places/nearby`는 `includeExternal=true`일 때 Kakao 주변 장소를 `externalPlaces`로 함께 반환한다. `category`가 있으면 내부 DB와 Kakao category group 모두 같은 탐색 의도로 제한한다.
 - 새 현장 Evidence가 생성되면 deterministic Core Engine v1이 `PlaceStatus`를 생성하고 `Place.currentStatus` snapshot을 갱신한다.
 - `PlaceFollow`는 `User.followedPlaces[]`를 대체하는 독립 모델이며 관심 장소와 상태 변화 알림의 기준이다.
 - 사람 팔로우 API는 `410 USER_FOLLOW_REMOVED`로 응답한다.
